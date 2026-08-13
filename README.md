@@ -68,13 +68,21 @@ By default, the agent decides when to use VidLens. If you want it to trigger
 automatically whenever you receive an image, install the auto-use rule:
 
 ```bash
-python scripts/vidlens.py --install-agents    # install (writes to ~/.codex/AGENTS.md)
-python scripts/vidlens.py --remove-agents     # remove
-python scripts/vidlens.py --status            # check status
+python scripts/vidlens.py --install-agents    # auto-detects Codex, Claude Code, Cursor
+python scripts/vidlens.py --remove-agents     # remove from all
+python scripts/vidlens.py --status            # check per-agent status
 ```
 
-The rule is transparent: it tells the agent to use VidLens and to inform
-the user it used an external vision model. It does not hide anything.
+The rule is transparent: it tells the agent to check first if it can see
+natively, and if not, use VidLens and inform the user. It does not hide
+anything.
+
+**Using a different agent?** (opencode, zcode, mimocode, etc.) VidLens is
+agent-agnostic. Write the rule to any config file:
+
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
+```
 
 ### Usage
 
@@ -228,12 +236,20 @@ VidLens 不会替换你的主模型。它只在需要视觉时激活。
 默认情况下，智能体自行决定何时使用 VidLens。如果你希望收到图片时自动触发，安装自动规则：
 
 ```bash
-python scripts/vidlens.py --install-agents   # 安装（写入 ~/.codex/AGENTS.md）
-python scripts/vidlens.py --remove-agents    # 移除
-python scripts/vidlens.py --status           # 查看状态
+python scripts/vidlens.py --install-agents   # 自动检测 Codex、Claude Code、Cursor
+python scripts/vidlens.py --remove-agents    # 从全部移除
+python scripts/vidlens.py --status           # 查看各 agent 状态
 ```
 
-规则是透明的：它会告诉智能体使用 VidLens 并告知用户使用了外部视觉模型。
+规则是透明的：它要求智能体先检查自己能否原生看图，如果不能就用 VidLens，
+并告知用户使用了外部视觉模型。
+
+**使用其他智能体？**（opencode、zcode、mimocode 等）VidLens 与 agent 无关，
+可以写入任意配置文件：
+
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
+```
 
 ### 用法
 
