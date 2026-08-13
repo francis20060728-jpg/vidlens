@@ -400,8 +400,15 @@ def contact_sheet(path, tmp_dir, index, frames=9, columns=3):
 # Vision API: single-provider call + provider-chain failover
 # ---------------------------------------------------------------------------
 
-def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg):
-    """Send one media file to one specific provider. Returns text or raises."""
+def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
+                       max_tokens_override=None):
+    """Send one media file to one specific provider. Returns text or raises.
+
+    Handles reasoning/thinking models (o1, mimo-v2.5, etc.) that output
+    ``reasoning_content`` before actual ``content``. When such a model uses
+    all available tokens on thinking (finish_reason="length", content empty),
+    the call is retried once with 3x max_tokens.
+    """
     url_data = data_url(media_path, kind)
     if kind == "video":
         content = [
@@ -415,10 +422,15 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg):
             {"type": "text", "text": prompt},
             {"type": "image_url", "image_url": {"url": url_data}},
         ]
+    base_tokens = int(cfg.get("response_tokens", 4000))
+    # Reasoning models need much higher limits from the start
+    if cfg.get("is_reasoning_model") and max_tokens_override is None:
+        base_tokens *= 3
+    max_tokens = max_tokens_override or base_tokens
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": content}],
-        "max_tokens": int(cfg.get("response_tokens", 4000)),
+        "max_tokens": max_tokens,
         "temperature": float(cfg.get("sampling_temp", 0.1)),
     }
     headers = {"Content-Type": "application/json"}
@@ -436,12 +448,32 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg):
             err = result.get("error", {})
             msg = err.get("message", str(result))[:500] if isinstance(err, dict) else str(result)[:500]
             raise RuntimeError("API returned no choices: " + msg)
-        content_val = choices[0].get("message", {}).get("content")
+        msg_obj = choices[0].get("message", {})
+        finish_reason = choices[0].get("finish_reason", "")
+        content_val = msg_obj.get("content")
+        reasoning_val = msg_obj.get("reasoning_content", "")
         if isinstance(content_val, list):
             content_val = "\n".join(
                 p.get("text", "") for p in content_val
                 if isinstance(p, dict) and p.get("type") == "text")
         text = (content_val or "").strip()
+        # Reasoning model: spent all tokens on thinking, content is empty.
+        # Retry once with 3x max_tokens so it can finish thinking + answer.
+        if not text and reasoning_val and finish_reason == "length":
+            if max_tokens_override is None:
+                new_tokens = base_tokens * 3
+                print("[reasoning] {} used all {} tokens on thinking; "
+                      "retrying with {} tokens ...".format(
+                          model, max_tokens, new_tokens), file=sys.stderr)
+                return _call_one_provider(api_url, api_key, model,
+                                          media_path, kind, prompt, cfg,
+                                          max_tokens_override=new_tokens)
+            # Already retried -- fall through to reasoning fallback below
+        # If content is still empty but reasoning exists, use it as result
+        if not text and reasoning_val:
+            print("[reasoning] content empty, using reasoning_content "
+                  "as fallback result", file=sys.stderr)
+            text = reasoning_val.strip()
         if not text:
             raise RuntimeError("API returned empty content: " + str(result)[:300])
         return text

@@ -134,6 +134,7 @@ Built-in: `describe`, `verify_output`, `quality_check`, `object_inventory`,
 | `response_tokens` | 4000 | Max response tokens |
 | `sampling_temp` | 0.1 | Temperature |
 | `http_timeout` | 120 | Seconds |
+| `is_reasoning_model` | false | Set true for thinking models (mimo-v2.5, o1, deepseek-r1) |
 
 Any OpenAI-compatible vision API works (gpt-4o, qwen-vl-max, gemini, etc.).
 
@@ -146,6 +147,7 @@ Any OpenAI-compatible vision API works (gpt-4o, qwen-vl-max, gemini, etc.).
 | Video fails | Install ffmpeg (preferred) or `pip install opencv-python numpy` |
 | All providers failed | A local OCR fallback kicks in for images; check your API key/URL |
 | Chinese path garbled | Fixed since v1.2 -- stdout/stderr forced to UTF-8 on Windows |
+| Very slow / appears stuck | Model may be a reasoning model (thinking before answering); VidLens auto-retries with more tokens, or set `is_reasoning_model: true` |
 
 ### MCP Server Mode
 

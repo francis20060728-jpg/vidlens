@@ -29,6 +29,14 @@ response_tokens: 4000      # max tokens for analysis text
 sampling_temp: 0.1         # 0.1 = factual, 0.7 = creative
 http_timeout: 120          # seconds (larger for high-res images)
 
+# --- Reasoning models (mimo-v2.5, o1, deepseek-r1, etc.) ---
+# These models output "reasoning_content" before the actual answer,
+# consuming many extra tokens. Set to true to auto-triple max_tokens
+# so the model has room to finish thinking AND produce a description.
+# Even with false, VidLens auto-detects and retries once with 3x tokens
+# if it gets an empty result -- this just does it from the start.
+is_reasoning_model: false
+
 # --- Video contact sheet (opencv fallback only) ---
 # These apply only when ffmpeg is absent and opencv is installed.
 # vidlens.py uses --frames to override sample_count from the CLI.
