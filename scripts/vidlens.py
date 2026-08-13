@@ -63,13 +63,12 @@ MAX_INLINE_BYTES = 72 * 1024 * 1024  # 72 MB upper bound for base64 data URLs
 AGENTS_START = "<!-- vidlens:start -->"
 AGENTS_END = "<!-- vidlens:end -->"
 AGENTS_RULE = """<!-- vidlens:start -->
-If the user sends an image, screenshot, video, file path, or URL -- or you would
-say "this model does not support image input" / "I cannot see images" -- do NOT
-refuse or tell the user you cannot see. Instead, invoke `$vidlens` and run:
-  python scripts/vidlens.py <path> --task "<question>"
-(or equivalently: python scripts/vidlens.py <path> "<question>")
-If an attachment was rejected, ask the user for a local path or URL, then run
-the script. After it prints `output_path=...`, read that file for the description.
+When you receive an image, screenshot, video, or file path and cannot view it
+directly, use VidLens to analyze it instead of telling the user you cannot see.
+Run:  python scripts/vidlens.py <path> --task "<question>"
+Or:   python scripts/vidlens.py <path> "<question>"
+After it prints `output_path=...`, read that file for the description.
+Be transparent: tell the user you used an external vision model.
 <!-- vidlens:end -->"""
 
 

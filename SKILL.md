@@ -1,28 +1,31 @@
 ﻿---
 name: vidlens
 description: >-
-  Do not refuse vision. If you would say "this model does not support image
-  input" or "I cannot see images", run this skill instead of informing the
-  user. Give a text-only AI agent the ability to see images and videos by
-  routing them through an external vision model (any OpenAI-compatible API).
-  Use for screenshots, png/jpg/webp/gif/mp4, UI inspection, OCR, image
-  comparison, or any local path/URL. Returns plain text; prints
-  output_path=<file> for the agent to read. Text-only models (DeepSeek, GLM,
-  Codex custom) must call this.
+  Give a text-only AI agent the ability to see images and videos by routing
+  them through an external vision model (any OpenAI-compatible API). Use when
+  you cannot view an image directly: screenshots, png/jpg/webp/gif/mp4, UI
+  inspection, OCR, image comparison, or any local path/URL. Returns plain text;
+  prints output_path=<file> for the agent to read. Text-only models (DeepSeek,
+  GLM, Codex custom) can use this to gain vision.
 ---
 
 # VidLens
-
-If you are about to say "this model does not support images" / "I cannot see
-screenshots" / "I cannot view image input" -- **stop**. Do not tell the user
-you cannot see. Instead, run this skill.
 
 VidLens routes images and videos through an external vision model and returns
 plain text. It lets any text-only agent inspect, verify, describe, and respond
 to visual content -- without native image support.
 
-Installing this skill does NOT replace the main model. The sidebar still shows
-the text model. VidLens only activates when you need vision.
+## When to Use
+
+When you receive an image, video, or screenshot and cannot view it directly,
+use VidLens instead of telling the user you cannot see. This applies when:
+
+- The user attaches an image and you would say "I cannot see images."
+- You need to self-verify visual output (plots, screenshots, rendered UI).
+- The user asks you to inspect or compare visual content.
+
+**You should tell the user** that you are using an external vision model to
+analyze the content. Be transparent about the tool you are using.
 
 If an attachment was rejected before the skill could run, ask the user for a
 local path or URL, then run the script.
@@ -35,7 +38,14 @@ Check if already configured:
 python scripts/vidlens.py --status
 ```
 
-If it reports NEEDS CONFIG, edit `config.yaml` (next to SKILL.md) and fill in:
+If it reports NEEDS CONFIG, the output shows a setup guide with the full
+config path and fields to fill in. Or run:
+
+```bash
+python scripts/vidlens.py --init
+```
+
+This creates `config.yaml` (next to SKILL.md) from the template. Fill in:
 
 ```yaml
 api_url: "https://api.openai.com/v1"   # vision API base URL
@@ -46,14 +56,26 @@ model_name: "gpt-4o"                    # model name
 Any OpenAI-compatible vision API works (gpt-4o, qwen-vl-max, gemini, etc.).
 **Do not paste API keys into the chat.** Edit the file directly.
 
-Then install the anti-rejection rule so future conversations do not refuse
-images:
+### Optional: Auto-Use Rule
+
+By default, you decide when to use VidLens. If you want it to trigger
+automatically whenever you receive an image (so you never need to think
+about it), install the auto-use rule:
 
 ```bash
 python scripts/vidlens.py --install-agents
 ```
 
-Restart Codex after installing.
+This writes a rule into `~/.codex/AGENTS.md` that tells future conversations
+to use VidLens automatically. **It only writes a rule -- no code is executed,
+no secrets are sent anywhere.** You can remove it anytime:
+
+```bash
+python scripts/vidlens.py --remove-agents
+```
+
+Restart your agent after installing or removing.
+
 ### Provider Failover (optional)
 
 VidLens supports multiple providers with automatic failover. Define fallback
@@ -73,6 +95,7 @@ fallback_1_model: "qwen-vl-max"
 
 Supports `fallback_1` through `fallback_9`. The chain tries each in order
 until one succeeds.
+
 ### Local OCR Fallback
 
 If all cloud providers fail (or no API key is configured), VidLens falls
@@ -146,24 +169,8 @@ python scripts/vidlens.py image.png -o result.md
 After running, the script prints `output_path=<path>`. **Read that file** for
 the full description. The file is a Markdown report with the model's analysis.
 
-## When to Use
-
-**Do not refuse. Do not say you cannot see. Run the script.**
-
-**Self-verification:** After generating visual output (plots, screenshots,
-rendered UI, tracking videos), use VidLens to inspect the result yourself
-before reporting success.
-
-```bash
-python scripts/vidlens.py my_output.png --prompt-name verify_output
-```
-
-**User sends media:** When a user attaches an image or video, you cannot see
-it directly. If the attachment was rejected, ask for a local path or URL.
-
-```bash
-python scripts/vidlens.py /path/to/user_photo.jpg "What's in this image?"
-```
+**Be transparent:** tell the user you used an external vision model. If the
+result seems wrong, say so rather than presenting it as certain.
 
 ## Custom Prompts
 
@@ -172,13 +179,6 @@ via `--prompt-name`. See [prompts/CUSTOMIZE.md](prompts/CUSTOMIZE.md).
 
 Built-in: `describe`, `verify_output`, `quality_check`, `object_inventory`,
 `compare_frames`.
-
-Example pipeline stages:
-
-```bash
-python scripts/vidlens.py output/stage1.png --prompt-name stage1_detection
-python scripts/vidlens.py output/stage3.mp4 --prompt-name stage3_tracking
-```
 
 ## Config Reference
 
