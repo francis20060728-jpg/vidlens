@@ -59,20 +59,43 @@ _PROMPTS_DIR = _SKILL_ROOT / "prompts"
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tiff", ".tif"}
 VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv", ".m4v", ".webm"}
 MAX_INLINE_BYTES = 72 * 1024 * 1024  # 72 MB upper bound for base64 data URLs
+MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024  # 50 MB cap for URL downloads
+
+TRIGGER_SCENARIOS = """<!-- vidlens:start -->
+## VidLens vision bridge (auto)
+
+VidLens lets you SEE images, videos, and web pages by routing them through an
+external vision model. Use it whenever you encounter visual content you cannot
+natively inspect.
+
+## When to trigger VidLens
+
+TRIGGER when ANY of these happen:
+1. User sends an image, screenshot, or video file.
+2. User sends a URL to a web page, image, or video -- download or screenshot it
+   first, then analyze with VidLens to check if the page renders correctly,
+   looks broken, or has the expected content.
+3. User discusses UI layout, design, charts, graphs, plots, or anything visual.
+4. You generated visual output (build screenshots, rendered pages, plots) and
+   need to self-verify it looks right.
+5. User asks "does this look right?" or "is this broken?" about anything visual.
+6. User mentions a color, layout, alignment, or visual element.
+
+## How to run
+   python {skill_root}/scripts/vidlens.py <path-or-url> --task "<question>"
+
+## Rules
+- CHECK FIRST: can you see it natively? If yes, skip VidLens.
+- If you cannot see it: do NOT silently ignore the image/URL. Run VidLens.
+- After it prints output_path=, READ that file for the description.
+- Be transparent: tell the user you used an external vision model.
+- For web page URLs: use your browser tool to screenshot, then pass the
+  screenshot to VidLens. Or pass the URL directly if it links to an image/video.
+<!-- vidlens:end -->"""
 
 AGENTS_START = "<!-- vidlens:start -->"
 AGENTS_END = "<!-- vidlens:end -->"
-AGENTS_RULE = """<!-- vidlens:start -->
-## VidLens vision bridge (auto)
-
-When the user sends an image, screenshot, video, or any visual file path:
-1. CHECK FIRST: can you actually see/display it natively? If yes, ignore this rule.
-2. If you cannot see it natively, do NOT silently ignore the image or only answer the text.
-3. Instead, run VidLens to get a text description:
-   python {skill_root}/scripts/vidlens.py <path> --task "<question>"
-4. Read the output_path= file it prints, then respond using that description.
-5. Be transparent: briefly tell the user you used an external vision model.
-<!-- vidlens:end -->"""
+AGENTS_RULE = TRIGGER_SCENARIOS
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +210,47 @@ def _looks_like_media(arg):
     return ext in IMAGE_EXTS or ext in VIDEO_EXTS
 
 
+def _is_url(arg):
+    """True if the arg looks like an http(s) URL."""
+    return arg.startswith("http://") or arg.startswith("https://")
+
+
+def _download_url(url, tmp_dir, index):
+    """Download a media file from a URL to tmp_dir. Returns (path, kind)."""
+    print("[url {}] downloading {} ...".format(index, url[:120]), file=sys.stderr)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "VidLens/1.0"})
+        resp = urllib.request.urlopen(req, timeout=60)
+        content_type = resp.headers.get("Content-Type", "")
+        data = resp.read(MAX_DOWNLOAD_BYTES + 1)
+        if len(data) > MAX_DOWNLOAD_BYTES:
+            raise RuntimeError("Download too large ({} > {} MB)".format(
+                len(data) // (1024 * 1024), MAX_DOWNLOAD_BYTES // (1024 * 1024)))
+    except Exception as exc:
+        raise RuntimeError("Download failed: {}".format(exc))
+    # Determine extension from content-type or URL
+    ext_map = {
+        "image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp",
+        "image/gif": ".gif", "image/bmp": ".bmp", "image/tiff": ".tiff",
+        "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov",
+        "video/x-msvideo": ".avi",
+    }
+    ext = ext_map.get(content_type.split(";")[0].strip(), "")
+    if not ext:
+        url_ext = Path(url.split("?")[0]).suffix.lower()
+        if url_ext in IMAGE_EXTS or url_ext in VIDEO_EXTS:
+            ext = url_ext
+        else:
+            ext = ".png"  # assume image
+    kind = "video" if ext in VIDEO_EXTS else "image"
+    safe_name = "download-{}{}".format(index, ext)
+    out = tmp_dir / safe_name
+    out.write_bytes(data)
+    print("[url {}] saved {} ({} bytes, {})".format(
+        index, safe_name, len(data), content_type), file=sys.stderr)
+    return out, kind
+
+
 def separate_media_and_task(raw_media, explicit_task):
     """Split nargs='*' positional args into (media_files, task).
 
@@ -203,7 +267,7 @@ def separate_media_and_task(raw_media, explicit_task):
     media = []
     task_parts = []
     for arg in reversed(raw_media):
-        if Path(arg).exists() or _looks_like_media(arg):
+        if _is_url(arg) or Path(arg).exists() or _looks_like_media(arg):
             media.insert(0, arg)
         else:
             task_parts.insert(0, arg)
@@ -932,11 +996,19 @@ def main():
         tmp_dir = Path(tmp)
         results = []
         for index, raw_path in enumerate(args.media, start=1):
-            media_path = Path(raw_path).resolve()
-            if not media_path.exists():
-                print("ERROR: File not found: {}".format(raw_path), file=sys.stderr)
-                return 1
-            kind = media_kind(media_path)
+            # Handle URLs: download first, then process as local file
+            if _is_url(raw_path):
+                try:
+                    media_path, kind = _download_url(raw_path, tmp_dir, index)
+                except RuntimeError as exc:
+                    print("ERROR: {}".format(exc), file=sys.stderr)
+                    return 1
+            else:
+                media_path = Path(raw_path).resolve()
+                if not media_path.exists():
+                    print("ERROR: File not found: {}".format(raw_path), file=sys.stderr)
+                    return 1
+                kind = media_kind(media_path)
             if kind == "video":
                 text = analyze_video(cfg, media_path, tmp_dir, index, prompt,
                                      args.frames)
@@ -955,7 +1027,9 @@ def main():
             sections.append(text.strip())
         report = "\n".join(sections)
 
-    source = Path(args.media[0]).stem
+    first = args.media[0]
+    source = Path(first.split("?")[0].split("/")[-1]).stem if _is_url(first) \
+        else Path(first).stem
     kind_all = "video" if all(k == "video" for _, k, _ in results) else \
                "image" if all(k == "image" for _, k, _ in results) else "media"
     out = output_file(args.output, source, kind_all)

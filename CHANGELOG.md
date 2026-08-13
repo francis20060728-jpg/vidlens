@@ -5,15 +5,22 @@ Versions follow [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-14
+
 ### Added
+- URL support: pass `https://...` directly, auto-downloads the media file
+- Comprehensive trigger scenarios in AGENTS rule (URLs, UI, charts, build verification, etc.)
+- `verify_page` prompt template for checking if web pages render correctly
 - Multi-agent auto-detection for `--install-agents` (Codex, Claude Code, Cursor)
 - `--path` flag to install the rule into any agent's config file
-- Proactive rule wording: "check first if you can see natively" instead of passive
 - Agent-agnostic rule: unknown agents (opencode, zcode, mimocode) get printed instructions
+- Auto-Use Rule section added to all 9 README languages
 
 ### Changed
-- `--status` shows per-agent install status instead of just Codex
+- Rule wording: proactive "check first" + comprehensive trigger list (not just files)
+- `--status` shows per-agent install status
 - Rule paths use forward slashes for cross-platform compatibility
+- README: all 9 languages now consistent (Install + Auto-Use + Usage)
 
 ## [1.3.0] - 2026-08-14
 
@@ -50,5 +57,6 @@ Versions follow [semantic versioning](https://semver.org).
 - Launcher scripts (`vidlens.cmd` / `vidlens.sh`) with Python auto-detection
 
 [Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v1.3.0...HEAD
+[1.4.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.4.0
 [1.3.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.3.0
 [1.2.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.2.0

@@ -101,6 +101,12 @@ python scripts/vidlens.py a.png b.png --task "Compare these two designs"
 
 # Save to specific path
 python scripts/vidlens.py image.png -o report.md
+
+# Direct URL to an image/video (auto-downloaded)
+python scripts/vidlens.py https://example.com/photo.jpg "What is this?"
+
+# Check if a web page looks broken (use verify_page prompt)
+python scripts/vidlens.py screenshot.png --prompt-name verify_page
 ```
 
 Or use the launcher (auto-finds Python):
@@ -312,6 +318,22 @@ python scripts/vidlens.py video.mp4 "描述影片中的運動"
 python scripts/vidlens.py a.png b.png --task "比較這兩個設計"
 ```
 
+### 自動使用規則（可選）
+
+預設情況下，智慧體自行決定何時使用 VidLens。如果你希望收到圖片或網址時自動觸發：
+
+```bash
+python scripts/vidlens.py --install-agents   # 自動偵測 Codex、Claude Code、Cursor
+python scripts/vidlens.py --remove-agents    # 從全部移除
+```
+
+規則要求智慧體先檢查自己能否原生看圖，不能就用 VidLens，並告知使用者。
+
+**其他智慧體？**（opencode、zcode、mimocode 等）VidLens 與 agent 無關：
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
+```
+
 ### 許可證
 
 MIT。詳見 [LICENSE](LICENSE)。
@@ -346,6 +368,22 @@ python scripts/vidlens.py --status  # 設定を確認
 python scripts/vidlens.py screenshot.png "UI 要素は整列していますか？"
 python scripts/vidlens.py video.mp4 "動画の動きを説明してください"
 python scripts/vidlens.py a.png b.png --task "この2つのデザインを比較してください"
+```
+
+### 自動使用ルール（オプション）
+
+デフォルトでは、エージェントが VidLens の使用タイミングを判断します。画像や URL 受信時に自動トリガーしたい場合：
+
+```bash
+python scripts/vidlens.py --install-agents   # Codex、Claude Code、Cursor を自動検出
+python scripts/vidlens.py --remove-agents    # すべてから削除
+```
+
+ルールは透明性を保ちます：ネイティブで表示できるか確認し、できない場合は VidLens を使用し、ユーザーに通知します。
+
+**他のエージェント？**（opencode、zcode、mimocode 等）VidLens はエージェント非依存です：
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
 ```
 
 ### ライセンス
@@ -384,6 +422,22 @@ python scripts/vidlens.py video.mp4 "비디오의 움직임을 설명해 주세�
 python scripts/vidlens.py a.png b.png --task "이 두 디자인을 비교해 주세요"
 ```
 
+### 자동 사용 규칙 (선택)
+
+기본적으로 에이전트가 VidLens 사용 시점을 결정합니다. 이미지나 URL 수신 시 자동 트리거하려면:
+
+```bash
+python scripts/vidlens.py --install-agents   # Codex, Claude Code, Cursor 자동 감지
+python scripts/vidlens.py --remove-agents    # 전체에서 제거
+```
+
+규칙은 투명합니다: 네이티브로 볼 수 있는지 먼저 확인하고, 없으면 VidLens를 사용하며 사용자에게 알립니다.
+
+**다른 에이전트?** (opencode, zcode, mimocode 등) VidLens는 에이전트 독립적입니다:
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
+```
+
 ### 라이선스
 
 MIT. [LICENSE](LICENSE)를 참조하세요.
@@ -418,6 +472,22 @@ python scripts/vidlens.py --status  # Vérifier la configuration
 python scripts/vidlens.py screenshot.png "Les éléments d'interface sont-ils alignés ?"
 python scripts/vidlens.py video.mp4 "Décrivez le mouvement de la vidéo"
 python scripts/vidlens.py a.png b.png --task "Comparez ces deux conceptions"
+```
+
+### Règle d'utilisation automatique (optionnel)
+
+Par défaut, l'agent décide quand utiliser VidLens. Pour un déclenchement automatique à réception d'image ou d'URL :
+
+```bash
+python scripts/vidlens.py --install-agents   # détecte Codex, Claude Code, Cursor
+python scripts/vidlens.py --remove-agents    # supprimer de tous
+```
+
+La règle est transparente : l'agent vérifie d'abord s'il peut voir nativement, sinon utilise VidLens et informe l'utilisateur.
+
+**Autre agent ?** (opencode, zcode, mimocode, etc.) VidLens est indépendant de l'agent :
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
 ```
 
 ### Licence
@@ -456,6 +526,22 @@ python scripts/vidlens.py video.mp4 "Describe el movimiento del video"
 python scripts/vidlens.py a.png b.png --task "Compara estos dos diseños"
 ```
 
+### Regla de uso automático (opcional)
+
+Por defecto, el agente decide cuándo usar VidLens. Para activarlo automáticamente al recibir una imagen o URL:
+
+```bash
+python scripts/vidlens.py --install-agents   # detecta Codex, Claude Code, Cursor
+python scripts/vidlens.py --remove-agents    # eliminar de todos
+```
+
+La regla es transparente: el agente verifica primero si puede ver nativamente, si no, usa VidLens e informa al usuario.
+
+¿Otro agente? (opencode, zcode, mimocode, etc.) VidLens es independiente del agente:
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
+```
+
 ### Licencia
 
 MIT. Ver [LICENSE](LICENSE).
@@ -492,6 +578,22 @@ python scripts/vidlens.py video.mp4 "Beschreibe die Bewegung im Video"
 python scripts/vidlens.py a.png b.png --task "Vergleiche diese beiden Designs"
 ```
 
+### Auto-Verwendungsregel (optional)
+
+Standardmäßig entscheidet der Agent, wann VidLens verwendet wird. Für automatische Auslösung beim Empfang von Bildern oder URLs:
+
+```bash
+python scripts/vidlens.py --install-agents   # erkennt Codex, Claude Code, Cursor
+python scripts/vidlens.py --remove-agents    # von allen entfernen
+```
+
+Die Regel ist transparent: Der Agent prüft zuerst, ob er nativ sehen kann, verwendet sonst VidLens und informiert den Nutzer.
+
+Anderer Agent? (opencode, zcode, mimocode, etc.) VidLens ist agentenunabhängig:
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
+```
+
 ### Lizenz
 
 MIT. Siehe [LICENSE](LICENSE).
@@ -526,6 +628,22 @@ python scripts/vidlens.py --status  # Verificar configuração
 python scripts/vidlens.py screenshot.png "Os elementos da interface estão alinhados?"
 python scripts/vidlens.py video.mp4 "Descreva o movimento do vídeo"
 python scripts/vidlens.py a.png b.png --task "Compare estes dois designs"
+```
+
+### Regra de uso automático (opcional)
+
+Por padrão, o agente decide quando usar o VidLens. Para acionamento automático ao receber imagem ou URL:
+
+```bash
+python scripts/vidlens.py --install-agents   # detecta Codex, Claude Code, Cursor
+python scripts/vidlens.py --remove-agents    # remover de todos
+```
+
+A regra é transparente: o agente verifica primeiro se pode ver nativamente, se não, usa VidLens e informa o usuário.
+
+Outro agente? (opencode, zcode, mimocode, etc.) VidLens é independente do agente:
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
 ```
 
 ### Licença
