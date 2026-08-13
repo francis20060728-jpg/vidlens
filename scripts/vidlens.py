@@ -63,12 +63,15 @@ MAX_INLINE_BYTES = 72 * 1024 * 1024  # 72 MB upper bound for base64 data URLs
 AGENTS_START = "<!-- vidlens:start -->"
 AGENTS_END = "<!-- vidlens:end -->"
 AGENTS_RULE = """<!-- vidlens:start -->
-When you receive an image, screenshot, video, or file path and cannot view it
-directly, use VidLens to analyze it instead of telling the user you cannot see.
-Run:  python scripts/vidlens.py <path> --task "<question>"
-Or:   python scripts/vidlens.py <path> "<question>"
-After it prints `output_path=...`, read that file for the description.
-Be transparent: tell the user you used an external vision model.
+## VidLens vision bridge (auto)
+
+When the user sends an image, screenshot, video, or any visual file path:
+1. CHECK FIRST: can you actually see/display it natively? If yes, ignore this rule.
+2. If you cannot see it natively, do NOT silently ignore the image or only answer the text.
+3. Instead, run VidLens to get a text description:
+   python {skill_root}/scripts/vidlens.py <path> --task "<question>"
+4. Read the output_path= file it prints, then respond using that description.
+5. Be transparent: briefly tell the user you used an external vision model.
 <!-- vidlens:end -->"""
 
 
@@ -569,15 +572,72 @@ def output_file(output_arg, source_name, kind):
 # ---------------------------------------------------------------------------
 
 def agents_path():
+    """Return the Codex AGENTS.md path."""
     return Path.home() / ".codex" / "AGENTS.md"
 
 
-def install_agents_rule():
-    """Write anti-rejection rule into ~/.codex/AGENTS.md (idempotent)."""
-    path = agents_path()
+# Known agent config files. New agents are discovered by SKILL.md
+# self-install instructions -- the agent itself knows its config path.
+AGENT_CONFIGS = {
+    "codex": Path.home() / ".codex" / "AGENTS.md",
+    "claude_code": Path.home() / ".claude" / "CLAUDE.md",
+    "cursor": Path.home() / ".cursor" / "rules" / "vidlens.mdc",
+}
+
+
+def detect_agents():
+    """Return list of (name, path) for agents whose directory exists."""
+    found = []
+    for name, path in AGENT_CONFIGS.items():
+        if path.parent.exists() or path.exists():
+            found.append((name, path))
+    return found
+
+
+def _write_rule_to_file(path, rule_text):
+    """Insert or update the vidlens rule block in a config file. Returns True if changed."""
     existing = ""
     if path.exists():
         existing = path.read_text(encoding="utf-8")
+    pattern = re.compile(re.escape(AGENTS_START) + r".*?" + re.escape(AGENTS_END),
+                         re.DOTALL)
+    if pattern.search(existing):
+        updated = pattern.sub(rule_text, existing)
+    else:
+        updated = existing.rstrip()
+        if updated:
+            updated += "\n\n"
+        updated += rule_text + "\n"
+    if updated != existing:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(".{}.tmp".format(path.name))
+        tmp.write_text(updated, encoding="utf-8")
+        os.replace(str(tmp), str(path))
+        return True
+    return False
+
+
+def install_agents_rule():
+    """Write the rule into all detected agent config files. Returns (results, rule_text)."""
+    # Use forward slashes so the path works in any shell on any OS
+    skill_root = str(_SKILL_ROOT).replace("\\", "/")
+    rule_text = AGENTS_RULE.strip().replace("{skill_root}", skill_root)
+    agents = detect_agents()
+    results = []
+    for name, path in agents:
+        changed = _write_rule_to_file(path, rule_text)
+        results.append((name, path, changed))
+    return results, rule_text
+
+
+def install_to_path(custom_path):
+    """Write the rule to a user-specified config file path."""
+    skill_root = str(_SKILL_ROOT).replace("\\", "/")
+    rule_text = AGENTS_RULE.strip().replace("{skill_root}", skill_root)
+    path = Path(custom_path).expanduser()
+    changed = _write_rule_to_file(path, rule_text)
+    return path, changed, rule_text
+
     pattern = re.compile(re.escape(AGENTS_START) + r".*?" + re.escape(AGENTS_END),
                          re.DOTALL)
     rule = AGENTS_RULE.strip()
@@ -598,10 +658,27 @@ def install_agents_rule():
 
 
 def remove_agents_rule():
-    """Remove the vidlens block from AGENTS.md."""
-    path = agents_path()
-    if not path.exists():
-        return path, False
+    """Remove the vidlens block from all detected agent config files."""
+    agents = detect_agents()
+    results = []
+    for name, path in agents:
+        if not path.exists():
+            results.append((name, path, False))
+            continue
+        text = path.read_text(encoding="utf-8")
+        pattern = re.compile(re.escape(AGENTS_START) + r".*?" + re.escape(AGENTS_END)
+                             + r"\n?", re.DOTALL)
+        updated = pattern.sub("", text).rstrip()
+        if updated != text.rstrip():
+            if updated:
+                updated += "\n"
+            tmp = path.with_name(".{}.tmp".format(path.name))
+            tmp.write_text(updated, encoding="utf-8")
+            os.replace(str(tmp), str(path))
+            results.append((name, path, True))
+        else:
+            results.append((name, path, False))
+    return results
     text = path.read_text(encoding="utf-8")
     pattern = re.compile(re.escape(AGENTS_START) + r".*?" + re.escape(AGENTS_END)
                          + r"\n?", re.DOTALL)
@@ -616,12 +693,18 @@ def remove_agents_rule():
     return path, False
 
 
-def agents_rule_installed():
-    path = agents_path()
-    if not path.exists():
-        return False
-    return bool(re.search(re.escape(AGENTS_START),
-                           path.read_text(encoding="utf-8")))
+def agents_rule_status():
+    """Return list of (name, path, installed) for all detected agents."""
+    agents = detect_agents()
+    status = []
+    for name, path in agents:
+        if path.exists():
+            installed = bool(re.search(re.escape(AGENTS_START),
+                             path.read_text(encoding="utf-8")))
+        else:
+            installed = False
+        status.append((name, path, installed))
+    return status
 
 
 # ---------------------------------------------------------------------------
@@ -649,8 +732,16 @@ def print_status():
         ocr_backends.append("Tesseract")
     ocr_label = ", ".join(ocr_backends) if ocr_backends else "(not found)"
     print("local_ocr: " + ocr_label)
-    print("AGENTS.md anti-rejection: " + str(agents_path()))
-    print("  " + ("INSTALLED" if agents_rule_installed() else "NOT INSTALLED (run with --install-agents)"))
+    print("")
+    print("Agent rules:")
+    status = agents_rule_status()
+    if status:
+        for name, path, installed in status:
+            tag = "INSTALLED" if installed else "NOT INSTALLED"
+            print("  {} ({}): {}".format(name, path, tag))
+    else:
+        print("  (no agent config dirs detected)")
+    print("  Install with: python scripts/vidlens.py --install-agents")
     if not config_complete(cfg):
         print("")
         print_setup_guide()
@@ -752,9 +843,11 @@ def main():
     parser.add_argument("-o", "--output", default="",
                         help="Output Markdown path. Default: ~/.vidlens/outputs/")
     parser.add_argument("--install-agents", action="store_true",
-                        help="Write anti-rejection rule into ~/.codex/AGENTS.md.")
+                        help="Write vision rule to detected agent config files.")
+    parser.add_argument("--path", default="",
+                        help="Custom config file path for --install-agents.")
     parser.add_argument("--remove-agents", action="store_true",
-                        help="Remove the vidlens rule from ~/.codex/AGENTS.md.")
+                        help="Remove the vidlens rule from detected agent configs.")
     parser.add_argument("--status", action="store_true",
                         help="Show configuration status.")
     parser.add_argument("--init", action="store_true",
@@ -782,16 +875,38 @@ def main():
         print_setup_guide()
         return 0
     if args.install_agents:
-        path, changed = install_agents_rule()
-        print("AGENTS.md: {} {}".format(
-            "updated" if changed else "already current", path))
-        if changed:
-            print("Restart Codex for the rule to take effect.")
+        if args.path:
+            path, changed, rule_text = install_to_path(args.path)
+            label = "updated" if changed else "already current"
+            print("  custom: {} -> {}".format(label, path))
+            print("Restart your agent for the rule to take effect.")
+            return 0
+        results, rule_text = install_agents_rule()
+        if not results:
+            print("No agent config directories detected (checked ~/.codex, ~/.claude, ~/.cursor).")
+            print("")
+            print("If you use a different agent (opencode, zcode, mimocode, etc.),")
+            print("add this rule to your agent's config file manually:")
+            print("")
+            print(rule_text)
+        else:
+            for name, path, changed in results:
+                label = "updated" if changed else "already current"
+                print("  {}: {} -> {}".format(name, label, path))
+            print("")
+            if any(c for _, _, c in results):
+                print("Restart your agent(s) for the rule to take effect.")
+            print("Note: Using an agent not listed above? The rule is agent-agnostic.")
+            print("Paste it into your agent's own config file -- see SKILL.md.")
         return 0
     if args.remove_agents:
-        path, changed = remove_agents_rule()
-        print("AGENTS.md: {} {}".format(
-            "cleaned" if changed else "nothing to remove", path))
+        results = remove_agents_rule()
+        if not results:
+            print("No agent config directories detected.")
+        else:
+            for name, path, changed in results:
+                label = "cleaned" if changed else "nothing to remove"
+                print("  {}: {} -> {}".format(name, label, path))
         return 0
 
     # nargs='*' swallows everything positional including question text.

@@ -5,6 +5,16 @@ Versions follow [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+- Multi-agent auto-detection for `--install-agents` (Codex, Claude Code, Cursor)
+- `--path` flag to install the rule into any agent's config file
+- Proactive rule wording: "check first if you can see natively" instead of passive
+- Agent-agnostic rule: unknown agents (opencode, zcode, mimocode) get printed instructions
+
+### Changed
+- `--status` shows per-agent install status instead of just Codex
+- Rule paths use forward slashes for cross-platform compatibility
+
 ## [1.3.0] - 2026-08-14
 
 ### Added

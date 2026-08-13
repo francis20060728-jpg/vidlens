@@ -58,23 +58,41 @@ Any OpenAI-compatible vision API works (gpt-4o, qwen-vl-max, gemini, etc.).
 
 ### Optional: Auto-Use Rule
 
-By default, you decide when to use VidLens. If you want it to trigger
-automatically whenever you receive an image (so you never need to think
-about it), install the auto-use rule:
+VidLens works even without any config file changes -- when you realize you
+cannot see an image, just run the script. But if you want it to trigger
+**automatically** in future conversations, install the auto-use rule:
 
 ```bash
 python scripts/vidlens.py --install-agents
 ```
 
-This writes a rule into `~/.codex/AGENTS.md` that tells future conversations
-to use VidLens automatically. **It only writes a rule -- no code is executed,
-no secrets are sent anywhere.** You can remove it anytime:
+This auto-detects known agents (Codex, Claude Code, Cursor) and writes the
+rule to each one's config file. **No code is executed, no secrets are sent.**
+Remove anytime:
 
 ```bash
 python scripts/vidlens.py --remove-agents
 ```
 
 Restart your agent after installing or removing.
+
+### Using a different agent? (opencode, zcode, mimocode, etc.)
+
+VidLens is agent-agnostic. Any agent that reads a config file on startup can
+use the auto-use rule. If your agent is not auto-detected, `--install-agents`
+prints the rule text for you to paste into your agent's own config file.
+Or write directly to a custom path:
+
+```bash
+python scripts/vidlens.py --install-agents --path ~/.youragent/rules.md
+```
+
+The rule itself is agent-agnostic plain text:
+
+1. When the user sends an image, check first: can you see it natively?
+2. If not, do NOT silently ignore the image. Run VidLens to get a description.
+3. Read the output_path= file and respond using that description.
+4. Be transparent: tell the user you used an external vision model.
 
 ### Provider Failover (optional)
 
