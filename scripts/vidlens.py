@@ -614,7 +614,60 @@ def print_status():
     print("local_ocr: " + ocr_label)
     print("AGENTS.md anti-rejection: " + str(agents_path()))
     print("  " + ("INSTALLED" if agents_rule_installed() else "NOT INSTALLED (run with --install-agents)"))
+    if not config_complete(cfg):
+        print("")
+        print_setup_guide()
     return 0 if config_complete(cfg) else 1
+
+
+# ---------------------------------------------------------------------------
+# Setup / first-run guidance
+# ---------------------------------------------------------------------------
+
+def print_setup_guide():
+    """Print a clear, actionable setup guide with the full config path."""
+    print("=" * 60)
+    print("  VidLens Setup Guide")
+    print("=" * 60)
+    print("")
+
+    config_exists = _CONFIG_PATH.exists()
+    example_path = _SKILL_ROOT / "config.example.yaml"
+    step = 1
+
+    if not config_exists:
+        if example_path.exists():
+            print("Step {}: Create config.yaml from the template".format(step))
+            step += 1
+            print("")
+            if os.name == "nt":
+                print('  copy "{}" "{}"'.format(example_path, _CONFIG_PATH))
+            else:
+                print('  cp "{}" "{}"'.format(example_path, _CONFIG_PATH))
+            print("")
+        else:
+            print("Step {}: Create config.yaml at this path".format(step))
+            step += 1
+            print("")
+
+    print("Step {}: Edit this file".format(step))
+    step += 1
+    print("")
+    print("  " + str(_CONFIG_PATH))
+    print("")
+    print("Step {}: Fill in these three fields".format(step))
+    step += 1
+    print("")
+    print('  api_url:     "https://api.openai.com/v1"   # any OpenAI-compatible URL')
+    print('  api_key:     "sk-your-key-here"            # your API key')
+    print('  model_name:  "gpt-4o"                      # vision model name')
+    print("")
+    print("Works with gpt-4o, qwen-vl-max, gemini, mimo-v2.5, or any")
+    print("other OpenAI-compatible vision model.")
+    print("")
+    print("After editing, run this again to verify:")
+    print("  python scripts/vidlens.py --status")
+    print("=" * 60)
 
 
 # ---------------------------------------------------------------------------
@@ -667,12 +720,30 @@ def main():
                         help="Remove the vidlens rule from ~/.codex/AGENTS.md.")
     parser.add_argument("--status", action="store_true",
                         help="Show configuration status.")
+    parser.add_argument("--init", action="store_true",
+                        help="Create config.yaml from template and show setup guide.")
     parser.add_argument("--frames", type=int, default=9,
                         help="Frames for contact-sheet fallback (default 9).")
     args = parser.parse_args()
 
     if args.status:
         return print_status()
+    if args.init:
+        example = _SKILL_ROOT / "config.example.yaml"
+        if _CONFIG_PATH.exists():
+            print("config.yaml already exists: " + str(_CONFIG_PATH))
+        elif example.exists():
+            import shutil as _sh
+            _sh.copy2(str(example), str(_CONFIG_PATH))
+            print("Created config.yaml from template: " + str(_CONFIG_PATH))
+        else:
+            _CONFIG_PATH.write_text(
+                'api_url: ""\napi_key: ""\nmodel_name: ""\n',
+                encoding="utf-8")
+            print("Created config.yaml: " + str(_CONFIG_PATH))
+        print("")
+        print_setup_guide()
+        return 0
     if args.install_agents:
         path, changed = install_agents_rule()
         print("AGENTS.md: {} {}".format(
@@ -698,8 +769,9 @@ def main():
 
     cfg = load_config()
     if not config_complete(cfg):
-        print("ERROR: Config incomplete. Edit:\n  " + str(_CONFIG_PATH)
-              + "\nSet api_url, api_key, and model_name.", file=sys.stderr)
+        print("ERROR: Config incomplete.", file=sys.stderr)
+        print("", file=sys.stderr)
+        print_setup_guide()
         return 1
 
     prompt = resolve_prompt(args.task, args.prompt_name)
