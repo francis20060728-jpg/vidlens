@@ -90,7 +90,7 @@ def _parse_flat_yaml(path):
             if ":" not in stripped:
                 continue
             key, _, raw = stripped.partition(":")
-            key = key.strip()
+            key = key.strip().lstrip("\ufeff").rstrip("\ufeff")
             raw = raw.strip()
             hash_pos = raw.find(" #")
             if hash_pos > 0:
