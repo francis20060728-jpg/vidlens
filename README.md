@@ -164,10 +164,13 @@ Three tools: `look`, `list_media`, `find_and_look`.
 
 MIT. See [LICENSE](LICENSE).
 
+### Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
 ---
 
 ## 简体中文
-
 让纯文本 AI 智能体拥有「看」图片和视频的能力。
 
 VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智能体 -- Codex、Claude Code、Cursor、Cline -- 无需原生图像支持即可检查、验证和响应视觉内容。
