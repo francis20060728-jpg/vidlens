@@ -400,14 +400,34 @@ def contact_sheet(path, tmp_dir, index, frames=9, columns=3):
 # Vision API: single-provider call + provider-chain failover
 # ---------------------------------------------------------------------------
 
+REASONING_MODEL_HINTS = (
+    "o1", "o3", "o4",          # OpenAI o-series
+    "mimo",                     # Xiaomi MiMo
+    "deepseek-r1", "deepseek-reasoner",  # DeepSeek
+    "qwq",                      # Qwen QwQ
+    "thinking",                 # generic suffix
+)
+
+
+def _is_reasoning_model(model_name, cfg):
+    """True if the model is a reasoning/thinking model.
+
+    Checks explicit config override first, then matches known model names.
+    """
+    if cfg.get("is_reasoning_model"):
+        return True
+    name = (model_name or "").lower()
+    return any(hint in name for hint in REASONING_MODEL_HINTS)
+
+
 def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
-                       max_tokens_override=None):
+                     ):
     """Send one media file to one specific provider. Returns text or raises.
 
     Handles reasoning/thinking models (o1, mimo-v2.5, etc.) that output
-    ``reasoning_content`` before actual ``content``. When such a model uses
-    all available tokens on thinking (finish_reason="length", content empty),
-    the call is retried once with 3x max_tokens.
+    ``reasoning_content`` before actual ``content``. Reasoning models get a
+    tripled token budget from the start so they have room to finish thinking
+    and produce a real answer -- no wasteful retry.
     """
     url_data = data_url(media_path, kind)
     if kind == "video":
@@ -423,14 +443,13 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
             {"type": "image_url", "image_url": {"url": url_data}},
         ]
     base_tokens = int(cfg.get("response_tokens", 4000))
-    # Reasoning models need much higher limits from the start
-    if cfg.get("is_reasoning_model") and max_tokens_override is None:
+    # Reasoning models need more room from the start (no wasteful retry)
+    if _is_reasoning_model(model, cfg):
         base_tokens *= 3
-    max_tokens = max_tokens_override or base_tokens
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": content}],
-        "max_tokens": max_tokens,
+        "max_tokens": base_tokens,
         "temperature": float(cfg.get("sampling_temp", 0.1)),
     }
     headers = {"Content-Type": "application/json"}
@@ -449,7 +468,6 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
             msg = err.get("message", str(result))[:500] if isinstance(err, dict) else str(result)[:500]
             raise RuntimeError("API returned no choices: " + msg)
         msg_obj = choices[0].get("message", {})
-        finish_reason = choices[0].get("finish_reason", "")
         content_val = msg_obj.get("content")
         reasoning_val = msg_obj.get("reasoning_content", "")
         if isinstance(content_val, list):
@@ -457,19 +475,7 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
                 p.get("text", "") for p in content_val
                 if isinstance(p, dict) and p.get("type") == "text")
         text = (content_val or "").strip()
-        # Reasoning model: spent all tokens on thinking, content is empty.
-        # Retry once with 3x max_tokens so it can finish thinking + answer.
-        if not text and reasoning_val and finish_reason == "length":
-            if max_tokens_override is None:
-                new_tokens = base_tokens * 3
-                print("[reasoning] {} used all {} tokens on thinking; "
-                      "retrying with {} tokens ...".format(
-                          model, max_tokens, new_tokens), file=sys.stderr)
-                return _call_one_provider(api_url, api_key, model,
-                                          media_path, kind, prompt, cfg,
-                                          max_tokens_override=new_tokens)
-            # Already retried -- fall through to reasoning fallback below
-        # If content is still empty but reasoning exists, use it as result
+        # If content is empty but reasoning_content exists, use it as fallback
         if not text and reasoning_val:
             print("[reasoning] content empty, using reasoning_content "
                   "as fallback result", file=sys.stderr)
