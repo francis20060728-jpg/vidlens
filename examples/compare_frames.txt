@@ -1,0 +1,5 @@
+﻿This is a contact sheet of frames sampled from a video.
+Compare the frames sequentially:
+- What changes between frames?
+- Is there smooth motion or sudden jumps?
+- Are there any visual glitches or rendering errors?

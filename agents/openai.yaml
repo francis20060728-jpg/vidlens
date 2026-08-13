@@ -1,0 +1,4 @@
+display_name: VidLens
+short_description: See images and videos through a vision model
+default_prompt: Verify my visual output using VidLens
+brand_color: "#2563eb"

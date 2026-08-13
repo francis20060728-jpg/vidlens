@@ -1,0 +1,37 @@
+﻿# Copy this file to config.yaml and fill in your credentials.
+#   cp config.example.yaml config.yaml
+
+# --- Required: fill these three ---
+api_url: ""         # e.g. "https://api.openai.com/v1"
+api_key: ""         # e.g. "sk-xxxx..."
+model_name: ""      # e.g. "gpt-4o" / "qwen-vl-max" / "gemini-2.0-flash"
+
+# --- Optional: fallback providers ---
+# If the primary fails, VidLens tries each fallback in order.
+# Uncomment and fill in. Supports fallback_1 through fallback_9.
+#
+# fallback_1_url: "https://api.openai.com/v1"
+# fallback_1_key: "sk-backup..."
+# fallback_1_model: "gpt-4o"
+#
+# fallback_2_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# fallback_2_key: "sk-alibaba..."
+# fallback_2_model: "qwen-vl-max"
+
+# --- Local OCR fallback (images only, no API needed) ---
+# When all cloud providers fail, VidLens tries local OCR:
+#   - Windows: Windows.Media.Ocr (built into Windows 10+)
+#   - Any OS: Tesseract CLI
+# No config needed -- detected automatically.
+
+# --- Generation ---
+response_tokens: 4000      # max tokens for analysis text
+sampling_temp: 0.1         # 0.1 = factual, 0.7 = creative
+http_timeout: 120          # seconds (larger for high-res images)
+
+# --- Video contact sheet (opencv fallback only) ---
+# These apply only when ffmpeg is absent and opencv is installed.
+# vidlens.py uses --frames to override sample_count from the CLI.
+sample_count: 9            # frames to pull for the contact sheet
+grid_columns: 3            # contact sheet layout columns
+jpeg_quality: 95           # 0-100, higher = sharper

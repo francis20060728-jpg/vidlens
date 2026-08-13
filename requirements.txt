@@ -1,0 +1,13 @@
+﻿# VidLens - Python dependencies
+# ==============================
+# Images: ZERO pip dependencies (Python stdlib only).
+# Videos: ffmpeg (system binary) is preferred -- no pip packages needed.
+#         If ffmpeg is absent, opencv provides a contact-sheet fallback.
+
+# Optional: video contact-sheet fallback (only if ffmpeg is unavailable)
+opencv-python>=4.5.0
+numpy>=1.20.0
+
+# Optional: MCP server mode (vidlens/server.py)
+# Requires Python 3.10+
+# pip install mcp opencv-python numpy

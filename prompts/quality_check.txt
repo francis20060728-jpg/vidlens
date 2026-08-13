@@ -1,0 +1,5 @@
+Assess the technical visual quality of this media:
+- Is the image sharp or blurry?
+- Is the lighting adequate?
+- Are there compression artifacts or rendering glitches?
+- Rate the overall quality on a scale of 1-10 and explain why.

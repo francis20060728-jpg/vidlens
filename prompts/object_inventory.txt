@@ -1,0 +1,5 @@
+List every distinct object you can identify in this image.
+For each object provide:
+- What it is
+- Approximate location (left/center/right, top/middle/bottom)
+- Confidence level (high/medium/low)
