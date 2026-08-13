@@ -15,19 +15,37 @@ verify, and respond to visual content without native image support.
 **Zero pip dependencies for images.** Only Python 3 stdlib required.
 Videos use ffmpeg (system binary) if available; opencv is an optional fallback.
 
+### Prerequisites
+
+- [Python 3](https://python.org) installed (any version 3.7+)
+- An OpenAI-compatible vision API key (gpt-4o, qwen-vl-max, gemini, etc.)
+- (Optional) [ffmpeg](https://ffmpeg.org) for video support
+
 ### Quick Start
 
+**Option A -- Let your AI agent do it (Codex / Claude Code / Cursor / Cline):**
+
+> Install the vidlens skill from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+**Option B -- Manual setup:**
+
 ```bash
-# 1. Create config.yaml from template
+# 1. Clone
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+
+# 2. Create config.yaml from template
 python scripts/vidlens.py --init
 
-# 2. Edit config.yaml (path shown in step 1 output) and fill in:
-#      api_url, api_key, model_name
+# 3. Edit config.yaml (the path is printed above) and fill in:
+#      api_url:     "https://api.openai.com/v1"
+#      api_key:     "sk-your-key"
+#      model_name:  "gpt-4o"
 
-# 3. Verify setup
+# 4. Verify setup
 python scripts/vidlens.py --status
 
-# 4. Look at an image
+# 5. Look at an image
 python scripts/vidlens.py photo.png "What's in this image?"
 ```
 
@@ -154,19 +172,37 @@ VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智
 
 **图片分析零依赖。** 只需 Python 3 标准库。视频可用 ffmpeg（系统二进制），opencv 为可选回退。
 
+### 前置条件
+
+- 已安装 [Python 3](https://python.org)（3.7+ 任意版本）
+- 一个 OpenAI 兼容的视觉 API 密钥（gpt-4o、qwen-vl-max、gemini 等）
+- （可选）[ffmpeg](https://ffmpeg.org) 用于视频支持
+
 ### 快速开始
 
+**方式一 -- 让 AI 智能体帮你（Codex / Claude Code / Cursor / Cline）：**
+
+> 从 https://github.com/francis20060728-jpg/vidlens 安装 vidlens 技能并帮我配置好。
+
+**方式二 -- 手动安装：**
+
 ```bash
-# 1. 从模板创建 config.yaml
+# 1. 克隆
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+
+# 2. 从模板创建 config.yaml
 python scripts/vidlens.py --init
 
-# 2. 编辑 config.yaml（路径在步骤 1 的输出中显示），填入：
-#      api_url、api_key、model_name
+# 3. 编辑 config.yaml（路径在上面已打印），填入：
+#      api_url:     "https://api.openai.com/v1"
+#      api_key:     "sk-your-key"
+#      model_name:  "gpt-4o"
 
-# 3. 验证配置
+# 4. 验证配置
 python scripts/vidlens.py --status
 
-# 4. 看一张图片
+# 5. 看一张图片
 python scripts/vidlens.py photo.png "图片里有什么？"
 ```
 
@@ -233,23 +269,19 @@ VidLens 將視覺檔案路由到外部視覺模型，回傳純文字。任何智
 
 **圖片分析零依賴。** 只需 Python 3 標準庫。影片可用 ffmpeg（系統二進位），opencv 為可選回退。
 
-### 快速開始
+### 安裝
+
+**或讓 AI 智慧體安裝（Codex / Claude Code / Cursor / Cline）：** 直接對它說「從 https://github.com/francis20060728-jpg/vidlens 安裝 vidlens 技能」。
+
+**手動安裝：**
 
 ```bash
-python scripts/vidlens.py --init                # 從模板建立 config.yaml
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+python scripts/vidlens.py --init    # 建立 config.yaml
 # 編輯 config.yaml，填入 api_url、api_key、model_name
-python scripts/vidlens.py --status              # 驗證設定
-python scripts/vidlens.py photo.png "圖片裡有什麼？"
+python scripts/vidlens.py --status  # 驗證設定
 ```
-
-### 工作原理
-
-```
-圖片 -> base64 編碼 -> 視覺 API -> Markdown 檔案
-影片 -> ffmpeg 壓縮 -> base64 編碼 -> 視覺 API -> Markdown 檔案
-```
-
-VidLens 不會替換你的主模型。它只在需要視覺時啟用。
 
 ### 用法
 
@@ -273,23 +305,19 @@ VidLens は視覚ファイルを外部のビジョンモデルにルーティン
 
 **画像分析はゼロ依存。** Python 3 標準ライブラリのみ必要。動画は ffmpeg（システムバイナリ）を使用、opencv はオプションのフォールバック。
 
-### クイックスタート
+### インストール
+
+**または AI エージェントにインストールさせる（Codex / Claude Code / Cursor / Cline）：**「https://github.com/francis20060728-jpg/vidlens から vidlens スキルをインストールして」と伝えるだけ。
+
+**手動インストール：**
 
 ```bash
-python scripts/vidlens.py --init                # テンプレートから config.yaml を作成
-# config.yaml を編集し、api_url、api_key、model_name を入力
-python scripts/vidlens.py --status              # 設定を確認
-python scripts/vidlens.py photo.png "この画像には何がありますか？"
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+python scripts/vidlens.py --init    # config.yaml を作成
+# config.yaml を編集: api_url, api_key, model_name
+python scripts/vidlens.py --status  # 設定を確認
 ```
-
-### 仕組み
-
-```
-画像 -> base64 エンコード -> ビジョン API -> Markdown ファイル
-動画 -> ffmpeg 圧縮 -> base64 エンコード -> ビジョン API -> Markdown ファイル
-```
-
-VidLens はメインモデルを置き換えません。必要な時にのみ動作します。
 
 ### 使い方
 
@@ -313,23 +341,19 @@ VidLens는 시각 파일을 외부 비전 모델로 라우팅하여 일반 텍�
 
 **이미지 분석은 종속성 제로.** Python 3 표준 라이브러리만 필요. 비디오는 ffmpeg(시스템 바이너리)를 사용하며, opencv는 선택적 폴백입니다.
 
-### 빠른 시작
+### 설치
+
+**또는 AI 에이전트에게 설치시키기 (Codex / Claude Code / Cursor / Cline):** "https://github.com/francis20060728-jpg/vidlens에서 vidlens 스킬을 설치해 줘"라고 말하세요.
+
+**수동 설치:**
 
 ```bash
-python scripts/vidlens.py --init                # 템플릿에서 config.yaml 생성
-# config.yaml 편집: api_url, api_key, model_name 입력
-python scripts/vidlens.py --status              # 설정 확인
-python scripts/vidlens.py photo.png "이 이미지에 무엇이 있나요?"
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+python scripts/vidlens.py --init    # config.yaml 생성
+# config.yaml 편집: api_url, api_key, model_name
+python scripts/vidlens.py --status  # 설정 확인
 ```
-
-### 작동 방식
-
-```
-이미지 -> base64 인코딩 -> 비전 API -> Markdown 파일
-비디오 -> ffmpeg 압축 -> base64 인코딩 -> 비전 API -> Markdown 파일
-```
-
-VidLens는 메인 모델을 교체하지 않습니다. 비전이 필요할 때만 작동합니다.
 
 ### 사용법
 
@@ -353,23 +377,19 @@ VidLens achemine les fichiers visuels via un modèle de vision externe et renvoi
 
 **Zéro dépendance pip pour les images.** Seule la bibliothèque standard Python 3 est requise. Les vidéos utilisent ffmpeg (binaire système) ; opencv est un repli optionnel.
 
-### Démarrage rapide
+### Installation
+
+**Ou laissez votre agent IA le faire (Codex / Claude Code / Cursor / Cline) :** dites-lui simplement « Installe le skill vidlens depuis https://github.com/francis20060728-jpg/vidlens ».
+
+**Installation manuelle :**
 
 ```bash
-python scripts/vidlens.py --init                # Crée config.yaml depuis le modèle
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+python scripts/vidlens.py --init    # Crée config.yaml
 # Éditez config.yaml: api_url, api_key, model_name
-python scripts/vidlens.py --status              # Vérifier la configuration
-python scripts/vidlens.py photo.png "Que contient cette image ?"
+python scripts/vidlens.py --status  # Vérifier la configuration
 ```
-
-### Fonctionnement
-
-```
-Image -> encodage base64 -> API de vision -> fichier Markdown
-Vidéo -> compression ffmpeg -> encodage base64 -> API de vision -> fichier Markdown
-```
-
-VidLens ne remplace pas votre modèle principal. Il ne s'active que lorsque la vision est nécessaire.
 
 ### Utilisation
 
@@ -393,23 +413,19 @@ VidLens enruta archivos visuales a través de un modelo de visión externo y dev
 
 **Cero dependencias pip para imágenes.** Solo se requiere la biblioteca estándar de Python 3. Los videos usan ffmpeg (binario del sistema); opencv es un respaldo opcional.
 
-### Inicio rápido
+### Instalación
+
+**O deja que tu agente de IA lo instale (Codex / Claude Code / Cursor / Cline):** simplemente dile « Instala el skill vidlens desde https://github.com/francis20060728-jpg/vidlens ».
+
+**Instalación manual:**
 
 ```bash
-python scripts/vidlens.py --init                # Crea config.yaml desde la plantilla
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+python scripts/vidlens.py --init    # Crea config.yaml
 # Edita config.yaml: api_url, api_key, model_name
-python scripts/vidlens.py --status              # Verificar configuración
-python scripts/vidlens.py photo.png "¿Qué hay en esta imagen?"
+python scripts/vidlens.py --status  # Verificar configuración
 ```
-
-### Cómo funciona
-
-```
-Imagen -> codificación base64 -> API de visión -> archivo Markdown
-Vídeo -> compresión ffmpeg -> codificación base64 -> API de visión -> archivo Markdown
-```
-
-VidLens no reemplaza tu modelo principal. Solo se activa cuando se necesita visión.
 
 ### Uso
 
@@ -433,23 +449,19 @@ VidLens leitet visuelle Dateien über ein externes Vision-Modell und gibt reinen
 
 **Keine pip-Abhängigkeiten für Bilder.** Nur die Python-3-Standardbibliothek wird benötigt. Videos verwenden ffmpeg (Systembinärdatei); opencv ist ein optionaler Fallback.
 
-### Schnellstart
+### Installation
+
+**Oder lassen Sie Ihren KI-Agenten installieren (Codex / Claude Code / Cursor / Cline):** Sagen Sie einfach „Installiere das vidlens Skill von https://github.com/francis20060728-jpg/vidlens".
+
+**Manuelle Installation:**
 
 ```bash
-python scripts/vidlens.py --init                # Erstellt config.yaml aus der Vorlage
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+python scripts/vidlens.py --init    # Erstellt config.yaml
 # config.yaml bearbeiten: api_url, api_key, model_name
-python scripts/vidlens.py --status              # Konfiguration überprüfen
-python scripts/vidlens.py photo.png "Was ist auf diesem Bild?"
+python scripts/vidlens.py --status  # Konfiguration überprüfen
 ```
-
-### Funktionsweise
-
-```
-Bild -> base64-Kodierung -> Vision-API -> Markdown-Datei
-Video -> ffmpeg-Komprimierung -> base64-Kodierung -> Vision-API -> Markdown-Datei
-```
-
-VidLens ersetzt nicht Ihr Hauptmodell. Es wird nur aktiviert, wenn Bilderkennung benötigt wird.
 
 ### Verwendung
 
@@ -473,23 +485,19 @@ O VidLens roteia arquivos visuais através de um modelo de visão externo e reto
 
 **Zero dependências pip para imagens.** Apenas a biblioteca padrão do Python 3 é necessária. Vídeos usam ffmpeg (binário do sistema); opencv é um fallback opcional.
 
-### Início rápido
+### Instalação
+
+**Ou deixe seu agente de IA instalar (Codex / Claude Code / Cursor / Cline):** basta dizer « Instale o skill vidlens de https://github.com/francis20060728-jpg/vidlens ».
+
+**Instalação manual:**
 
 ```bash
-python scripts/vidlens.py --init                # Cria config.yaml a partir do modelo
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
+python scripts/vidlens.py --init    # Cria config.yaml
 # Edite config.yaml: api_url, api_key, model_name
-python scripts/vidlens.py --status              # Verificar configuração
-python scripts/vidlens.py photo.png "O que há nesta imagem?"
+python scripts/vidlens.py --status  # Verificar configuração
 ```
-
-### Como funciona
-
-```
-Imagem -> codificação base64 -> API de visão -> arquivo Markdown
-Vídeo -> compactação ffmpeg -> codificação base64 -> API de visão -> arquivo Markdown
-```
-
-O VidLens não substitui seu modelo principal. Ele só é ativado quando a visão é necessária.
 
 ### Uso
 
