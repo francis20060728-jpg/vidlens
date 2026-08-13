@@ -125,6 +125,25 @@ back to local OCR for images:
 Local OCR returns extracted text only, not visual descriptions. But it
 ensures the agent always gets *something* rather than failing.
 
+## URL Support
+
+VidLens can download and analyze media from URLs directly:
+
+```bash
+python scripts/vidlens.py https://example.com/photo.jpg "What is this?"
+python scripts/vidlens.py https://example.com/video.mp4 "Describe the motion"
+```
+
+For **web page URLs** (not direct media links), use your browser tool to
+screenshot the page first, then pass the screenshot to VidLens with
+`--prompt-name verify_page`:
+
+```bash
+python scripts/vidlens.py page-screenshot.png --prompt-name verify_page
+```
+
+This checks whether the page renders correctly, looks broken, or has errors.
+
 ## Finding Python
 
 All commands use `python` below. If `python` is not on PATH, try:
@@ -196,7 +215,7 @@ Drop `.txt` files in `prompts/` to create reusable templates. Reference them
 via `--prompt-name`. See [prompts/CUSTOMIZE.md](prompts/CUSTOMIZE.md).
 
 Built-in: `describe`, `verify_output`, `quality_check`, `object_inventory`,
-`compare_frames`.
+`compare_frames`, `verify_page`.
 
 ## Config Reference
 
