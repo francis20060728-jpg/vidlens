@@ -18,15 +18,16 @@ Videos use ffmpeg (system binary) if available; opencv is an optional fallback.
 ### Quick Start
 
 ```bash
-# 1. Configure (edit config.yaml next to SKILL.md)
-cp config.example.yaml config.yaml
-# Fill in: api_url, api_key, model_name
+# 1. Create config.yaml from template
+python scripts/vidlens.py --init
 
-# 2. Install anti-rejection rule (so the agent never says "I can't see")
-python scripts/vidlens.py --install-agents
-# Restart your agent
+# 2. Edit config.yaml (path shown in step 1 output) and fill in:
+#      api_url, api_key, model_name
 
-# 3. Look at an image
+# 3. Verify setup
+python scripts/vidlens.py --status
+
+# 4. Look at an image
 python scripts/vidlens.py photo.png "What's in this image?"
 ```
 
@@ -43,21 +44,19 @@ Video -> ffmpeg compress -> base64 encode -> Vision API -> Markdown file
 VidLens does NOT replace your main model. It only activates when vision is
 needed. The sidebar still shows your text model.
 
-### Anti-Rejection
+### Auto-Use Rule (optional)
 
-Text-only agents often refuse images ("this model does not support image
-input"). VidLens prevents this:
+By default, the agent decides when to use VidLens. If you want it to trigger
+automatically whenever you receive an image, install the auto-use rule:
 
 ```bash
-# Write a rule into ~/.codex/AGENTS.md (idempotent, won't touch other rules)
-python scripts/vidlens.py --install-agents
-
-# Remove it later
-python scripts/vidlens.py --remove-agents
-
-# Check status
-python scripts/vidlens.py --status
+python scripts/vidlens.py --install-agents    # install (writes to ~/.codex/AGENTS.md)
+python scripts/vidlens.py --remove-agents     # remove
+python scripts/vidlens.py --status            # check status
 ```
+
+The rule is transparent: it tells the agent to use VidLens and to inform
+the user it used an external vision model. It does not hide anything.
 
 ### Usage
 
@@ -125,7 +124,7 @@ Any OpenAI-compatible vision API works (gpt-4o, qwen-vl-max, gemini, etc.).
 | Problem | Fix |
 |---------|-----|
 | `python: command not found` | Use the launcher (`vidlens.cmd` / `vidlens.sh`) or add Python to PATH |
-| `NEEDS CONFIG` | Run `python scripts/vidlens.py --status`, then edit `config.yaml` |
+| `NEEDS CONFIG` | Run `python scripts/vidlens.py --init`, fill in `config.yaml`, then `--status` |
 | Video fails | Install ffmpeg (preferred) or `pip install opencv-python numpy` |
 | All providers failed | A local OCR fallback kicks in for images; check your API key/URL |
 | Chinese path garbled | Fixed since v1.2 -- stdout/stderr forced to UTF-8 on Windows |
@@ -158,8 +157,16 @@ VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智
 ### 快速开始
 
 ```bash
-cp config.example.yaml config.yaml  # 填入 api_url、api_key、model_name
-python scripts/vidlens.py --install-agents  # 安装反拒绝规则
+# 1. 从模板创建 config.yaml
+python scripts/vidlens.py --init
+
+# 2. 编辑 config.yaml（路径在步骤 1 的输出中显示），填入：
+#      api_url、api_key、model_name
+
+# 3. 验证配置
+python scripts/vidlens.py --status
+
+# 4. 看一张图片
 python scripts/vidlens.py photo.png "图片里有什么？"
 ```
 
@@ -175,15 +182,17 @@ python scripts/vidlens.py photo.png "图片里有什么？"
 
 VidLens 不会替换你的主模型。它只在需要视觉时激活。
 
-### 反拒绝机制
+### 自动使用规则（可选）
 
-纯文本智能体经常拒绝图片（"此模型不支持图像输入"）。VidLens 防止这种情况：
+默认情况下，智能体自行决定何时使用 VidLens。如果你希望收到图片时自动触发，安装自动规则：
 
 ```bash
-python scripts/vidlens.py --install-agents   # 写入 ~/.codex/AGENTS.md
+python scripts/vidlens.py --install-agents   # 安装（写入 ~/.codex/AGENTS.md）
 python scripts/vidlens.py --remove-agents    # 移除
 python scripts/vidlens.py --status           # 查看状态
 ```
+
+规则是透明的：它会告诉智能体使用 VidLens 并告知用户使用了外部视觉模型。
 
 ### 用法
 
@@ -227,8 +236,9 @@ VidLens 將視覺檔案路由到外部視覺模型，回傳純文字。任何智
 ### 快速開始
 
 ```bash
-cp config.example.yaml config.yaml
-python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --init                # 從模板建立 config.yaml
+# 編輯 config.yaml，填入 api_url、api_key、model_name
+python scripts/vidlens.py --status              # 驗證設定
 python scripts/vidlens.py photo.png "圖片裡有什麼？"
 ```
 
@@ -266,8 +276,9 @@ VidLens は視覚ファイルを外部のビジョンモデルにルーティン
 ### クイックスタート
 
 ```bash
-cp config.example.yaml config.yaml
-python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --init                # テンプレートから config.yaml を作成
+# config.yaml を編集し、api_url、api_key、model_name を入力
+python scripts/vidlens.py --status              # 設定を確認
 python scripts/vidlens.py photo.png "この画像には何がありますか？"
 ```
 
@@ -305,8 +316,9 @@ VidLens는 시각 파일을 외부 비전 모델로 라우팅하여 일반 텍�
 ### 빠른 시작
 
 ```bash
-cp config.example.yaml config.yaml
-python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --init                # 템플릿에서 config.yaml 생성
+# config.yaml 편집: api_url, api_key, model_name 입력
+python scripts/vidlens.py --status              # 설정 확인
 python scripts/vidlens.py photo.png "이 이미지에 무엇이 있나요?"
 ```
 
@@ -344,8 +356,9 @@ VidLens achemine les fichiers visuels via un modèle de vision externe et renvoi
 ### Démarrage rapide
 
 ```bash
-cp config.example.yaml config.yaml
-python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --init                # Crée config.yaml depuis le modèle
+# Éditez config.yaml: api_url, api_key, model_name
+python scripts/vidlens.py --status              # Vérifier la configuration
 python scripts/vidlens.py photo.png "Que contient cette image ?"
 ```
 
@@ -383,8 +396,9 @@ VidLens enruta archivos visuales a través de un modelo de visión externo y dev
 ### Inicio rápido
 
 ```bash
-cp config.example.yaml config.yaml
-python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --init                # Crea config.yaml desde la plantilla
+# Edita config.yaml: api_url, api_key, model_name
+python scripts/vidlens.py --status              # Verificar configuración
 python scripts/vidlens.py photo.png "¿Qué hay en esta imagen?"
 ```
 
@@ -422,8 +436,9 @@ VidLens leitet visuelle Dateien über ein externes Vision-Modell und gibt reinen
 ### Schnellstart
 
 ```bash
-cp config.example.yaml config.yaml
-python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --init                # Erstellt config.yaml aus der Vorlage
+# config.yaml bearbeiten: api_url, api_key, model_name
+python scripts/vidlens.py --status              # Konfiguration überprüfen
 python scripts/vidlens.py photo.png "Was ist auf diesem Bild?"
 ```
 
@@ -461,8 +476,9 @@ O VidLens roteia arquivos visuais através de um modelo de visão externo e reto
 ### Início rápido
 
 ```bash
-cp config.example.yaml config.yaml
-python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --init                # Cria config.yaml a partir do modelo
+# Edite config.yaml: api_url, api_key, model_name
+python scripts/vidlens.py --status              # Verificar configuração
 python scripts/vidlens.py photo.png "O que há nesta imagem?"
 ```
 
