@@ -5,6 +5,23 @@ Versions follow [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-14
+
+### Changed
+- **Progressive disclosure architecture**: SKILL.md body reduced 40%
+  (1732 -> 1047 bytes). Only the essential run + read-result commands
+  remain in the always-loaded body.
+- Moved detailed content into `docs/` layer 3 reference files:
+  - `docs/SETUP.md` -- first-time configuration walkthrough, API provider
+    table, config reference
+  - `docs/ADVANCED.md` -- provider failover, reasoning models, OCR
+    fallback, video, custom prompts, agent integration, MCP server
+  - `docs/TROUBLESHOOTING.md` -- problem/fix table
+- SKILL.md now follows the proper two-layer skill pattern:
+  Layer 1 = frontmatter description (always in context),
+  Layer 2 = minimal body (loaded on trigger),
+  Layer 3 = docs/ (read on demand)
+
 ## [1.4.0] - 2026-08-14
 
 ### Added
@@ -56,7 +73,8 @@ Versions follow [semantic versioning](https://semver.org).
 - `--init`, `--status`, `--install-agents`, `--remove-agents` commands
 - Launcher scripts (`vidlens.cmd` / `vidlens.sh`) with Python auto-detection
 
-[Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v1.4.0...HEAD
+[1.5.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.5.0
 [1.4.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.4.0
 [1.3.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.3.0
 [1.2.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.2.0
