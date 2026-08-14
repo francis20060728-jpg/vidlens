@@ -133,7 +133,10 @@ Tem alguma pergunta ou sugestão? Escreva para **francis20060728@gmail.com** e r
 - [Guia de instalação](docs/SETUP.md)
 - [Recursos avançados](docs/ADVANCED.md)
 - [Solução de problemas](docs/TROUBLESHOOTING.md)
+- [Testes e limites](docs/TESTING.md)
 - [Registro de alterações](CHANGELOG.md)
+- [Versões](https://github.com/francis20060728-jpg/vidlens/releases)
+- [Guia do desenvolvedor](DEV_GUIDE.md)
 
 ## Licença
 

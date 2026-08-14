@@ -133,7 +133,10 @@ python scripts/vidlens.py --status
 - [설치 가이드](docs/SETUP.md)
 - [고급 기능](docs/ADVANCED.md)
 - [문제 해결](docs/TROUBLESHOOTING.md)
+- [테스트 및 경계](docs/TESTING.md)
 - [변경 로그](CHANGELOG.md)
+- [릴리스](https://github.com/francis20060728-jpg/vidlens/releases)
+- [개발 가이드](DEV_GUIDE.md)
 
 ## 라이선스
 

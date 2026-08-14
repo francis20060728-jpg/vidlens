@@ -358,6 +358,18 @@ cd F:\vscode\开源\vidlens
 & 'D:\tool\Git\cmd\git.exe' push origin main
 ```
 
+### Release workflow
+
+1. Update `vidlens.__version__`, `CHANGELOG.md`, this guide, and the language
+   READMEs together.
+2. Run the full automated test suite and at least one real CLI or MCP smoke
+   test before tagging.
+3. Create an annotated tag (`vX.Y.Z`) and push `main` plus the tag.
+4. Create the GitHub Release for that tag using the matching changelog section.
+5. Verify the GitHub Release URL, tag target, changelog date, and README links.
+   Documentation-only fixes may follow a release tag; runtime releases must
+   point at the commit that passed the smoke test.
+
 ### Sync to installed Codex skill
 
 Use Python (never inline Chinese paths in PowerShell):

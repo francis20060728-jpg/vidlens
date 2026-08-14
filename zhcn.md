@@ -139,7 +139,10 @@ python scripts/vidlens.py --status
 - [安装指南](docs/SETUP.md)
 - [高级功能](docs/ADVANCED.md)
 - [故障排除](docs/TROUBLESHOOTING.md)
+- [测试与边界](docs/TESTING.md)
 - [更新日志](CHANGELOG.md)
+- [版本发布](https://github.com/francis20060728-jpg/vidlens/releases)
+- [开发指南](DEV_GUIDE.md)
 
 ## 许可证
 

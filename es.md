@@ -133,7 +133,10 @@ Comprueba primero la capacidad real del modelo/proveedor. Los modelos explícita
 - [Guía de instalación](docs/SETUP.md)
 - [Funciones avanzadas](docs/ADVANCED.md)
 - [Solución de problemas](docs/TROUBLESHOOTING.md)
+- [Pruebas y límites](docs/TESTING.md)
 - [Registro de cambios](CHANGELOG.md)
+- [Versiones](https://github.com/francis20060728-jpg/vidlens/releases)
+- [Guía para desarrolladores](DEV_GUIDE.md)
 
 ## Licencia
 

@@ -150,6 +150,8 @@ Full troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Testing and Boundaries](docs/TESTING.md)
 - [Changelog](CHANGELOG.md)
+- [Releases](https://github.com/francis20060728-jpg/vidlens/releases)
+- [Developer Guide](DEV_GUIDE.md)
 
 ## Contact
 
