@@ -22,8 +22,9 @@ python scripts/vidlens.py image.png "What is this?"
 ## Read the result
 
 The analysis text is printed to stdout (after the output_path= line).
-Read it directly from the command output. The full result is also saved
-to the output_path file. Tell the user you used an external vision model.
+Read it directly from the command output. DO NOT separately read the
+output_path file -- the answer is already there. Tell the user you used
+an external vision model.
 
 ## Deeper docs (read on demand)
 

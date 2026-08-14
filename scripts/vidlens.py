@@ -91,7 +91,8 @@ TRIGGER when ANY of these happen:
   screenshot. Do NOT download URLs automatically. Only download if the user
   explicitly requests it.
 - The analysis text is printed to stdout after the output_path= line.
-  Read it directly from the command output.
+  The result text appears RIGHT THERE in stdout. DO NOT separately read
+  the output_path file -- the answer is already in the command output.
 - Be transparent: tell the user you used an external vision model.
 <!-- vidlens:end -->"""
 
