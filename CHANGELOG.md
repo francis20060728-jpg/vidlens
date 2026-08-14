@@ -5,6 +5,14 @@ Versions follow [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+### Added
+- One-Click Deploy section in all 9 languages (tell your agent to install)
+- MCP Tools table (`look`, `list_media`, `find_and_look`) with full descriptions in all languages
+- Contact section with author email in all languages
+
+### Changed
+- Reasoning model list no longer hardcoded (was mimo-v2.5, o1, o3, etc. -- now says "auto-detects thinking models")
+
 ## [2.0.0] - 2026-08-14
 
 ### Changed
