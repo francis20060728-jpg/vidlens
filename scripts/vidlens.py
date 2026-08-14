@@ -1042,12 +1042,16 @@ def main():
             ts, json.dumps([str(p) for p, _, _ in results], ensure_ascii=False))
         + report + "\n"
     )
-    out.write_text(content, encoding="utf-8")
-    print("output_path={}".format(out))
-    # Print result to stdout (forced UTF-8 on Windows) so agents read
-    # it directly -- no second file-reading step that may hit GBK issues.
+    # Print result to stdout FIRST -- this is the primary output.
+    # Even if file write fails, the agent already has the answer.
     print()
     print(report.strip())
+    # Try to save to file (best effort; stdout already delivered).
+    try:
+        out.write_text(content, encoding="utf-8")
+        print("output_path={}".format(out))
+    except Exception as exc:
+        print("output_path=(write failed: {}; result is above)".format(exc), file=sys.stderr)
     return 0
 
 
