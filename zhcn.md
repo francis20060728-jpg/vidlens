@@ -1,19 +1,25 @@
 # VidLens
 
-[English](en.md) | [en](en.md) | [zhtw](zhtw.md) | [ja](ja.md) | [ko](ko.md) | [fr](fr.md) | [es](es.md) | [de](de.md) | [pt](pt.md)
+[English](README.md) | [繁體中文](zhtw.md) | [日本語](ja.md) | [한국어](ko.md) | [Français](fr.md) | [Español](es.md) | [Deutsch](de.md) | [Português](pt.md)
+
+---
 
 让纯文本 AI 智能体拥有「看」图片和视频的能力。
 
-VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智能体无需原生图像支持即可检查和响应视觉内容。
+VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智能体 -- Codex、Claude Code、Cursor、Cline -- 无需原生图像支持即可检查、验证和响应视觉内容。
 
-**图片分析零依赖。** 只需 Python 3 标准库。视频可用 ffmpeg，opencv 为可选回退。
+> **如果你的模型本身支持视觉，请不要使用 VidLens。** 它只用于无法看图的纯文本模型。
 
-**如果你的模型本身支持视觉，请不要使用 VidLens。** 它只用于无法看图的纯文本模型。
+## 工作原理
+
+```
+图片/视频 -> base64 编码 -> 视觉 API -> 纯文本结果
+```
 
 ## 前置条件
 
 - 已安装 [Python 3](https://python.org)（3.7+）
-- 一个 OpenAI 兼容的视觉 API 密钥
+- 一个 OpenAI 兼容的视觉 API 密钥（gpt-4o、qwen-vl-max、gemini 等）
 - （可选）[ffmpeg](https://ffmpeg.org) 用于视频支持
 
 ## 快速开始：MCP 服务器（推荐）
@@ -21,10 +27,15 @@ VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智
 MCP 是使用 VidLens 最快的方式——无进程启动、无沙箱延迟。
 
 ```bash
+# 1. 安装
+git clone https://github.com/francis20060728-jpg/vidlens.git
+cd vidlens
 pip install "mcp>=1.0,<2.0" opencv-python numpy
-python scripts/vidlens.py --init     # 创建 config.yaml
+# 2. 配置
+python scripts/vidlens.py --init
 # 编辑 config.yaml: api_url, api_key, model_name
-python vidlens/server.py             # 启动 MCP 服务器
+# 3. 启动 MCP 服务器
+python vidlens/server.py
 ```
 
 在 MCP 客户端（Claude Desktop、Cursor、Cline）中注册：
@@ -34,7 +45,7 @@ python vidlens/server.py             # 启动 MCP 服务器
   "mcpServers": {
     "vidlens": {
       "command": "python",
-      "args": ["/绝对路径/vidlens/vidlens/server.py"]
+      "args": ["/abs/path/to/vidlens/vidlens/server.py"]
     }
   }
 }
@@ -44,35 +55,66 @@ python vidlens/server.py             # 启动 MCP 服务器
 
 ## 快速开始：CLI（不支持 MCP 的 agent 的备选）
 
+结果直接打印到 stdout，无需读取单独的文件。
+
 ```bash
 git clone https://github.com/francis20060728-jpg/vidlens.git
 cd vidlens
-python scripts/vidlens.py --init     # 创建 config.yaml
+python scripts/vidlens.py --init
 # 编辑 config.yaml: api_url, api_key, model_name
-python scripts/vidlens.py --status   # 验证
+python scripts/vidlens.py --status
 python scripts/vidlens.py photo.png "图片里有什么？"
 ```
 
-## 自动使用规则（Codex / Claude Code）
+## 自动使用规则（Codex）
 
 ```bash
-python scripts/vidlens.py --install-agents   # 自动检测 agent 配置
-python scripts/vidlens.py --remove-agents    # 从全部移除
+python scripts/vidlens.py --install-agents
+python scripts/vidlens.py --remove-agents
+python scripts/vidlens.py --status
 ```
 
-规则会先检查原生视觉：如果模型能看图就跳过 VidLens。只有纯文本模型才触发。
+规则会先检查原生视觉：如果模型能看图就跳过 VidLens。MCP 工具优先于 CLI。
+
+## 功能
+
+- **图片零依赖**（仅 Python 标准库）
+- **MCP 服务器模式**（Claude Desktop、Cursor、Cline）
+- **多提供商故障转移**（最多 9 个备用）
+- **推理模型支持**（mimo-v2.5、o1、o3、deepseek-r1、qwq）
+- **本地 OCR 回退**（Windows OCR / Tesseract）
+- **视频支持**（ffmpeg 或 opencv 联系表回退）
+- **自定义 prompt 模板**（放 .txt 到 prompts/）
+- **多提供商**：任何 OpenAI 兼容的视觉 API
 
 ## 配置
 
 | 键 | 默认值 | 用途 |
-|----|--------|------|
-| `api_url` | "" | 视觉 API 地址 |
-| `api_key` | "" | API 密钥 |
-| `model_name` | "" | 模型名称 |
-| `response_tokens` | 4000 | 最大响应 token |
-| `is_reasoning_model` | false | 推理模型设 true |
+|-----|-----|-----|
+| `api_url` | `""` | 视觉 API 地址 |
+| `api_key` | `""` | API 密钥 |
+| `model_name` | `""` | 模型名称 |
+| `response_tokens` | `4000` | 最大响应 token |
+| `sampling_temp` | `0.1` | 温度（0.1 精确，0.7 创意） |
+| `http_timeout` | `120` | 超时秒数 |
+| `is_reasoning_model` | `false` | 推理模型设 true |
+| `fallback_N_url` | `""` | 备用提供商 N 地址 |
 
-任何 OpenAI 兼容的视觉 API 均可。
+## 故障排除
+
+| 问题 | 修复 |
+|---------|---------|
+| `NEEDS CONFIG` | 运行 `--init`，填 config.yaml，然后 `--status` |
+| `python: not found` | 用启动器（`vidlens.cmd` / `vidlens.sh`） |
+| 视频失败 | 安装 ffmpeg 或 `pip install opencv-python numpy` |
+| 首次运行慢 | 沙箱在审批网络——只发生一次 |
+
+## 文档
+
+- [安装指南](docs/SETUP.md)
+- [高级功能](docs/ADVANCED.md)
+- [故障排除](docs/TROUBLESHOOTING.md)
+- [更新日志](CHANGELOG.md)
 
 ## 许可证
 
