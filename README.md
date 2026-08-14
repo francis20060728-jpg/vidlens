@@ -19,6 +19,14 @@ verify, and respond to visual content without native image support.
 Image/Video -> base64 encode -> Vision API -> plain text result
 ```
 
+## One-Click Deploy (ask your AI agent)
+
+Tell your agent:
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+The agent will clone the repo, run --init, and help you fill in config.yaml.
+
 ## Prerequisites
 
 - [Python 3](https://python.org) (3.7+, any version)
@@ -56,7 +64,15 @@ Register in your MCP client (Claude Desktop, Cursor, Cline):
 }
 ```
 
-Three tools: `look`, `list_media`, `find_and_look`.
+### MCP Tools
+
+| Tool | Description | Key Arguments |
+|------|-------------|---------------|
+| `look` | Analyze a single image or video file with the vision model. Videos are auto-sampled into a labeled contact sheet. | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | Find image and video files in a directory. Searches recursively, filters by filename keyword. Returns absolute paths sorted images-first. | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | Search a directory by keyword, then analyze the best match in one call. Convenience combo of list_media + look. | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+Example: `look(media_path="chart.png", prompt="What is this chart showing?")`
 
 ## Quick Start: CLI (fallback for non-MCP agents)
 
@@ -87,7 +103,7 @@ skipped. MCP tools are preferred over CLI.
 - **Zero pip dependencies for images** (Python stdlib only)
 - **MCP server mode** for Claude Desktop, Cursor, Cline
 - **Provider failover** (up to 9 fallback providers)
-- **Reasoning model support** (mimo-v2.5, o1, o3, deepseek-r1, qwq)
+- **Reasoning model support** (auto-detects thinking/reasoning models)
 - **Local OCR fallback** (Windows OCR / Tesseract) when all APIs fail
 - **Video support** via ffmpeg (system binary) with opencv contact-sheet fallback
 - **Custom prompt templates** (drop .txt in prompts/)
@@ -123,6 +139,10 @@ Full troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 - [Advanced Features](docs/ADVANCED.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Changelog](CHANGELOG.md)
+
+## Contact
+
+Questions or suggestions? Email **francis20060728@gmail.com**.
 
 ## License
 

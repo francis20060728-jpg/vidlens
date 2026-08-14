@@ -16,6 +16,14 @@ VidLens 將視覺檔案路由到外部視覺模型，回傳純文字。任何智
 圖片/影片 -> base64 編碼 -> 視覺 API -> 純文字結果
 ```
 
+## 一鍵部署（告訴你的 AI 智慧體）
+
+告訴你的智慧體：
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+智慧體會克隆倉庫、執行 --init，並幫你填寫 config.yaml。
+
 ## 前置條件
 
 - 已安裝 [Python 3](https://python.org)（3.7+）
@@ -51,7 +59,16 @@ python vidlens/server.py
 }
 ```
 
-三個工具：`look`、`list_media`、`find_and_look`。
+### MCP 工具
+
+| 工具 | 描述 | 主要參數 |
+|------|------|------|
+| `look` | 用視覺模型分析單個圖片或影片檔案。影片自動採樣為帶標註的聯繫表。 | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | 查找目錄中的圖片和影片檔案。遞迴搜尋，按檔名關鍵詞過濾。回傳按圖片優先排序的絕對路徑。 | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | 按關鍵詞搜尋目錄，然後一次呼叫分析最佳匹配。list_media + look 的便捷組合。 | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+範例：`look(media_path="chart.png", prompt="這張圖顯示了什麼？")`
+
 
 ## 快速開始：CLI（不支援 MCP 的備選）
 
@@ -105,6 +122,9 @@ python scripts/vidlens.py --status
 | `NEEDS CONFIG` | 執行 `--init`，填 config.yaml，然後 `--status` |
 | 影片失敗 | 安裝 ffmpeg 或 `pip install opencv-python numpy` |
 
+## 回饋
+
+有問題或建議？發電子郵件到 **francis20060728@gmail.com**，我會盡快處理。
 ## 文件
 
 - [安裝指南](docs/SETUP.md)

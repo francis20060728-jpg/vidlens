@@ -16,6 +16,14 @@ VidLens는 시각 파일을 외부 비전 모델로 라우팅하여 일반 텍�
 이미지/비디오 -> base64 인코딩 -> 비전 API -> 일반 텍스트 결과
 ```
 
+## 원클릭 배포 (AI 에이전트에게 지시)
+
+에이전트에게 말하세요:
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+에이전트가 저장소를 클론하고, --init을 실행하며, config.yaml 작성을 도와줍니다.
+
 ## 필수 조건
 
 - [Python 3](https://python.org) (3.7+)
@@ -50,7 +58,16 @@ MCP 클라이언트에 등록:
 }
 ```
 
-세 가지 도구: `look`, `list_media`, `find_and_look`.
+### MCP 도구
+
+| 도구 | 설명 | 주요 인수 |
+|------|------|------|
+| `look` | 비전 모델로 단일 이미지 또는 비디오 파일을 분석합니다. 비디오는 자동으로 레이블이 지정된 콩택트 시트로 샘플링됩니다. | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | 디렉토리에서 이미지 및 비디오 파일을 찾습니다. 재귀적으로 검색하고 파일명 키워드로 필터링합니다. 이미지 우선으로 정렬된 절대 경로를 반환합니다. | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | 키워드로 디렉토리를 검색한 후 한 번의 호출로 최적 일치 항목을 분석합니다. list_media + look의 편리한 조합입니다. | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+예: `look(media_path="chart.png", prompt="이 이미지는 무엇을 보여주나요?")`
+
 
 ## 빠른 시작: CLI (MCP 미지원 폴백)
 
@@ -102,6 +119,9 @@ python scripts/vidlens.py --status
 | `NEEDS CONFIG` | `--init` 실행 후 config.yaml 편집 |
 | 비디오 실패 | ffmpeg 또는 `pip install opencv-python numpy` |
 
+## 피드백
+
+질문이나 제안이 있으신가요? **francis20060728@gmail.com**로 이메일을 보내주시면 신속히 처리하겠습니다.
 ## 문서
 
 - [설치 가이드](docs/SETUP.md)

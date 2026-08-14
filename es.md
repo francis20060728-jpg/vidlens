@@ -16,6 +16,14 @@ VidLens enruta archivos visuales a través de un modelo de visión externo y dev
 Imagen/Video -> codificación base64 -> API de visión -> texto sin formato
 ```
 
+## Despliegue en un clic (pídele a tu agente IA)
+
+Dile a tu agente:
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+El agente clonará el repositorio, ejecutará --init y te ayudará a completar config.yaml.
+
 ## Requisitos
 
 - [Python 3](https://python.org) (3.7+)
@@ -50,7 +58,16 @@ Registrar en tu cliente MCP:
 }
 ```
 
-Tres herramientas: `look`, `list_media`, `find_and_look`.
+### Herramientas MCP
+
+| Herramienta | Descripción | Argumentos clave |
+|------|------|------|
+| `look` | Analiza un archivo individual de imagen o video con el modelo de visión. Los videos se muestrean automáticamente en una hoja de contacto etiquetada. | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | Encuentra archivos de imagen y video en un directorio. Búsqueda recursiva, filtrado por palabra clave de nombre de archivo. Devuelve rutas absolutas ordenadas con imágenes primero. | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | Busca en un directorio por palabra clave y luego analiza la mejor coincidencia en una llamada. Combinación conveniente de list_media + look. | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+Ejemplo: `look(media_path="chart.png", prompt="¿Qué muestra este gráfico?")`
+
 
 ## Inicio: CLI (respaldo sin MCP)
 
@@ -102,6 +119,9 @@ Verifica primero la visión nativa: si el modelo ve imágenes, VidLens se omite.
 | `NEEDS CONFIG` | Ejecutar `--init`, llenar config.yaml |
 | Video falla | Instalar ffmpeg o `pip install opencv-python numpy` |
 
+## Contacto
+
+¿Tienes una pregunta o sugerencia? Escribe a **francis20060728@gmail.com** y responderé pronto.
 ## Documentación
 
 - [Guía de instalación](docs/SETUP.md)

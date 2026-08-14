@@ -16,6 +16,14 @@ VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智
 图片/视频 -> base64 编码 -> 视觉 API -> 纯文本结果
 ```
 
+## 一键部署（告诉你的 AI 智能体）
+
+告诉你的智能体：
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+智能体会克隆仓库、运行 --init，并帮你填写 config.yaml。
+
 ## 前置条件
 
 - 已安装 [Python 3](https://python.org)（3.7+）
@@ -51,7 +59,16 @@ python vidlens/server.py
 }
 ```
 
-三个工具：`look`、`list_media`、`find_and_look`。
+### MCP 工具
+
+| 工具 | 描述 | 主要参数 |
+|------|------|------|
+| `look` | 用视觉模型分析单个图片或视频文件。视频自动采样为带标注的联系表。 | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | 查找目录中的图片和视频文件。递归搜索，按文件名关键词过滤。返回按图片优先排序的绝对路径。 | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | 按关键词搜索目录，然后一次调用分析最佳匹配。list_media + look 的便捷组合。 | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+示例：`look(media_path="chart.png", prompt="这张图显示了什么？")`
+
 
 ## 快速开始：CLI（不支持 MCP 的 agent 的备选）
 
@@ -81,7 +98,7 @@ python scripts/vidlens.py --status
 - **图片零依赖**（仅 Python 标准库）
 - **MCP 服务器模式**（Claude Desktop、Cursor、Cline）
 - **多提供商故障转移**（最多 9 个备用）
-- **推理模型支持**（mimo-v2.5、o1、o3、deepseek-r1、qwq）
+- **推理模型支持**（自动检测思考型模型）
 - **本地 OCR 回退**（Windows OCR / Tesseract）
 - **视频支持**（ffmpeg 或 opencv 联系表回退）
 - **自定义 prompt 模板**（放 .txt 到 prompts/）
@@ -109,6 +126,9 @@ python scripts/vidlens.py --status
 | 视频失败 | 安装 ffmpeg 或 `pip install opencv-python numpy` |
 | 首次运行慢 | 沙箱在审批网络——只发生一次 |
 
+## 反馈
+
+有问题或建议？发邮件到 **francis20060728@gmail.com**，我会尽快处理。
 ## 文档
 
 - [安装指南](docs/SETUP.md)

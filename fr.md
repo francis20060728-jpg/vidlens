@@ -16,6 +16,14 @@ VidLens achemine les fichiers visuels via un modèle de vision externe et renvoi
 Image/Vidéo -> encodage base64 -> API Vision -> texte brut
 ```
 
+## Déploiement en un clic (demandez à votre agent IA)
+
+Dites à votre agent :
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+L'agent clonera le dépôt, exécutera --init, et vous aidera à remplir config.yaml.
+
 ## Prérequis
 
 - [Python 3](https://python.org) (3.7+)
@@ -50,7 +58,16 @@ Inscrire dans votre client MCP :
 }
 ```
 
-Trois outils : `look`, `list_media`, `find_and_look`.
+### Outils MCP
+
+| Outil | Description | Arguments clés |
+|------|------|------|
+| `look` | Analyse un fichier image ou vidéo unique avec le modèle de vision. Les vidéos sont automatiquement échantillonnées en une planche-contact étiquetée. | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | Trouve les fichiers image et vidéo dans un répertoire. Recherche récursive, filtre par mot-clé de nom de fichier. Retourne les chemins absolus triés images en premier. | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | Recherche dans un répertoire par mot-clé, puis analyse la meilleure correspondance en un appel. Combinaison pratique de list_media + look. | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+Exemple : `look(media_path="chart.png", prompt="Que montre ce graphique ?")`
+
 
 ## Démarrage : CLI (repli sans MCP)
 
@@ -102,6 +119,9 @@ Vérifie d'abord la vision native : si le modèle voit les images, VidLens est i
 | `NEEDS CONFIG` | Exécuter `--init`, remplir config.yaml |
 | Vidéo échoue | Installer ffmpeg ou `pip install opencv-python numpy` |
 
+## Contact
+
+Une question ou une suggestion ? Écrivez à **francis20060728@gmail.com** et je répondrai rapidement.
 ## Documentation
 
 - [Guide d'installation](docs/SETUP.md)

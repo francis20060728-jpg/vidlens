@@ -16,6 +16,14 @@ VidLens leitet visuelle Dateien über ein externes Vision-Modell und gibt reinen
 Bild/Video -> base64-Kodierung -> Vision-API -> Klartext
 ```
 
+## Ein-Klick-Bereitstellung (bitten Sie Ihren KI-Agenten)
+
+Sagen Sie Ihrem Agenten:
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+Der Agent klont das Repository, führt --init aus und hilft Ihnen, config.yaml auszufüllen.
+
 ## Voraussetzungen
 
 - [Python 3](https://python.org) (3.7+)
@@ -50,7 +58,16 @@ In Ihrem MCP-Client registrieren:
 }
 ```
 
-Drei Tools: `look`, `list_media`, `find_and_look`.
+### MCP-Tools
+
+| Tool | Beschreibung | Schlüsselargumente |
+|------|------|------|
+| `look` | Analysiert eine einzelne Bild- oder Videodatei mit dem Vision-Modell. Videos werden automatisch in ein beschriftetes Kontaktblatt umgewandelt. | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | Findet Bild- und Videodateien in einem Verzeichnis. Rekursive Suche, Filterung nach Dateinamen-Schlüsselwort. Gibt absolute Pfade zurück, Bilder zuerst sortiert. | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | Durchsucht ein Verzeichnis nach Schlüsselwort und analysiert dann den besten Treffer in einem Aufruf. Praktische Kombination aus list_media + look. | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+Beispiel: `look(media_path="chart.png", prompt="Was zeigt dieses Diagramm?")`
+
 
 ## Schnellstart: CLI (Fallback ohne MCP)
 
@@ -102,6 +119,9 @@ Prüft zuerst native Vision: Wenn das Modell Bilder sehen kann, wird VidLens üb
 | `NEEDS CONFIG` | `--init` ausführen, config.yaml ausfüllen |
 | Video schlägt fehl | ffmpeg oder `pip install opencv-python numpy` |
 
+## Kontakt
+
+Frage oder Vorschlag? Schreiben Sie an **francis20060728@gmail.com** und ich antworte schnell.
 ## Dokumentation
 
 - [Installationsanleitung](docs/SETUP.md)

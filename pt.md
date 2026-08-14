@@ -16,6 +16,14 @@ O VidLens roteia arquivos visuais através de um modelo de visão externo e reto
 Imagem/Vídeo -> codificação base64 -> API de visão -> texto simples
 ```
 
+## Implantação em um clique (peça ao seu agente de IA)
+
+Diga ao seu agente:
+
+> Install vidlens from https://github.com/francis20060728-jpg/vidlens and configure it for me.
+
+O agente clonará o repositório, executará --init e ajudará você a preencher config.yaml.
+
 ## Requisitos
 
 - [Python 3](https://python.org) (3.7+)
@@ -50,7 +58,16 @@ Registrar em seu cliente MCP:
 }
 ```
 
-Três ferramentas: `look`, `list_media`, `find_and_look`.
+### Ferramentas MCP
+
+| Ferramenta | Descrição | Argumentos principais |
+|------|------|------|
+| `look` | Analisa um único arquivo de imagem ou vídeo com o modelo de visão. Vídeos são automaticamente amostrados em uma folha de contato rotulada. | `media_path` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional, default 9) |
+| `list_media` | Encontra arquivos de imagem e vídeo em um diretório. Busca recursiva, filtragem por palavra-chave de nome de arquivo. Retorna caminhos absolutos ordenados com imagens primeiro. | `directory` (optional, default cwd), `keyword` (optional), `max_results` (optional, default 20) |
+| `find_and_look` | Pesquisa um diretório por palavra-chave e depois analisa a melhor correspondência em uma chamada. Combinação conveniente de list_media + look. | `directory` (required), `keyword` (required), `prompt` (optional), `prompt_name` (optional), `frame_count` (optional) |
+
+Exemplo: `look(media_path="chart.png", prompt="O que este gráfico mostra?")`
+
 
 ## Início: CLI (alternativa sem MCP)
 
@@ -102,6 +119,9 @@ Verifica primeiro a visão nativa: se o modelo vê imagens, VidLens é ignorado.
 | `NEEDS CONFIG` | Executar `--init`, preencher config.yaml |
 | Vídeo falha | Instalar ffmpeg ou `pip install opencv-python numpy` |
 
+## Contato
+
+Tem alguma pergunta ou sugestão? Escreva para **francis20060728@gmail.com** e responderei em breve.
 ## Documentação
 
 - [Guia de instalação](docs/SETUP.md)
