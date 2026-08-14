@@ -5,92 +5,49 @@ Versions follow [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
-## [1.5.1] - 2026-08-14
-
-### Fixed
-- **Result now printed to stdout** after the `output_path=` line. Agents
-  read the analysis text directly from command output -- no second
-  file-reading step needed.
-- This eliminates the Windows GBK encoding problem entirely: stdout is
-  forced to UTF-8 (line 45-46 of vidlens.py), so Chinese and other
-  non-ASCII text displays correctly without manual encoding workarounds.
-- Fixes the "5-minute image analysis" issue: the delay was caused by
-  agents spending minutes debugging garbled file output, not the API
-  call itself. Now the result arrives in a single command (8-10s typical).
+## [2.0.0] - 2026-08-14
 
 ### Changed
-- Updated AGENTS.md auto-use rule: "Read it directly from the command output"
-- Updated SKILL.md "Read the result" section
+- **MCP-first architecture**: MCP server is now the recommended way to use VidLens. CLI/skill is the fallback for agents without MCP support.
+- **Native vision check**: if the model already supports vision, VidLens is NOT used. Only text-only models trigger it.
+- **SKILL.md reduced to 542 bytes** (69% reduction). Layer 1 = frontmatter, Layer 2 = 3-line body, Layer 3 = docs/ on demand.
+- README split from one 23KB file into 1KB index + 9 per-language files.
+- requirements.txt: mcp pinned to >=1.0,<2.0 (2.0 broke decorator API).
+- AGENTS rule rewritten: MCP preferred > CLI fallback > native vision check.
+- Do not install both MCP and skill. Use MCP if available, skill only as fallback.
+
+### Added
+- Multi-language docs: en, zhcn, zhtw, ja, ko, fr, es, de, pt
+- docs/SETUP.md, docs/ADVANCED.md, docs/TROUBLESHOOTING.md
+
+### Fixed
+- bridge.py now supports reasoning models (mimo-v2.5, o1, etc.)
+- Result printed to stdout before file write (no crash on permission error)
+- Prevents agents from reading output file twice
+
+## [1.5.1] - 2026-08-14
+### Fixed
+- Result printed to stdout, eliminates GBK encoding problem
 
 ## [1.5.0] - 2026-08-14
-
 ### Changed
-- **Progressive disclosure architecture**: SKILL.md body reduced 40%
-  (1732 -> 1047 bytes). Only the essential run + read-result commands
-  remain in the always-loaded body.
-- Moved detailed content into `docs/` layer 3 reference files:
-  - `docs/SETUP.md` -- first-time configuration walkthrough, API provider
-    table, config reference
-  - `docs/ADVANCED.md` -- provider failover, reasoning models, OCR
-    fallback, video, custom prompts, agent integration, MCP server
-  - `docs/TROUBLESHOOTING.md` -- problem/fix table
-- SKILL.md now follows the proper two-layer skill pattern:
-  Layer 1 = frontmatter description (always in context),
-  Layer 2 = minimal body (loaded on trigger),
-  Layer 3 = docs/ (read on demand)
+- Progressive disclosure architecture: SKILL.md body reduced 40%
+- Moved detailed content into docs/ layer 3 reference files
 
 ## [1.4.0] - 2026-08-14
-
 ### Added
-- URL support: pass `https://...` directly, auto-downloads the media file
-- Comprehensive trigger scenarios in AGENTS rule (URLs, UI, charts, build verification, etc.)
-- `verify_page` prompt template for checking if web pages render correctly
-- Multi-agent auto-detection for `--install-agents` (Codex, Claude Code, Cursor)
-- `--path` flag to install the rule into any agent's config file
-- Agent-agnostic rule: unknown agents (opencode, zcode, mimocode) get printed instructions
-- Auto-Use Rule section added to all 9 README languages
-
-### Changed
-- Rule wording: proactive "check first" + comprehensive trigger list (not just files)
-- `--status` shows per-agent install status
-- Rule paths use forward slashes for cross-platform compatibility
-- README: all 9 languages now consistent (Install + Auto-Use + Usage)
+- URL support, comprehensive trigger scenarios, multi-agent auto-detection
 
 ## [1.3.0] - 2026-08-14
-
 ### Added
-- Reasoning model support (mimo-v2.5, o1, o3, o4, deepseek-r1, qwq, thinking)
-- Auto-detection of reasoning model names -- triples `max_tokens` upfront
-  so the model has room to finish thinking and produce a real answer
-- `is_reasoning_model` config option for manual override
-- Fallback to `reasoning_content` when `content` is empty
-- 9-language README (EN, ZH-CN, ZH-TW, JA, KO, FR, ES, DE, PT)
-- Quick Start now starts from `git clone` (merged Install + Quick Start)
-- SECURITY.md
-
-### Changed
-- SKILL.md and AGENTS rule rewritten for transparency (no hidden routing)
-- Config field names: `api_url` / `api_key` / `model_name` (clearer)
-
-### Fixed
-- BOM stripping in YAML parser (`\ufeff`)
-- Windows UTF-8 stdout/stderr (GBK garbled output)
-- `nargs="*"` swallowing question text as media path
+- Reasoning model support, 9-language README
 
 ## [1.2.0] - 2026-08-14
-
 ### Added
 - Initial release
-- Multi-provider failover chain (up to 9 fallback providers)
-- Local OCR fallback (Windows OCR / Tesseract)
-- Zero-dependency image analysis (Python stdlib only)
-- Video support via ffmpeg (system binary) with opencv contact-sheet fallback
-- MCP server mode for Claude Desktop, Cursor, Cline
-- Custom prompt templates (`prompts/` directory)
-- `--init`, `--status`, `--install-agents`, `--remove-agents` commands
-- Launcher scripts (`vidlens.cmd` / `vidlens.sh`) with Python auto-detection
 
-[Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v2.0.0
 [1.5.1]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.5.1
 [1.5.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.5.0
 [1.4.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.4.0

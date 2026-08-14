@@ -62,37 +62,31 @@ MAX_INLINE_BYTES = 72 * 1024 * 1024  # 72 MB upper bound for base64 data URLs
 MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024  # 50 MB cap for URL downloads
 
 TRIGGER_SCENARIOS = """<!-- vidlens:start -->
-## VidLens vision bridge (auto)
+## VidLens vision bridge
 
-VidLens lets you SEE images, videos, and web pages by routing them through an
-external vision model. Use it whenever you encounter visual content you cannot
-natively inspect.
+VidLens lets you SEE images, videos, and web pages by routing them
+through an external vision model. Use it ONLY when you cannot natively
+inspect visual content.
 
-## When to trigger VidLens
-
-TRIGGER when ANY of these happen:
-1. User sends an image, screenshot, or video file.
-2. User sends a URL -- use your browser tool to screenshot the page, then pass
-   the screenshot to VidLens. Do NOT auto-download URLs unless the user
-   explicitly asks you to.
-3. User discusses UI layout, design, charts, graphs, plots, or anything visual.
-4. You generated visual output (build screenshots, rendered pages, plots) and
-   need to self-verify it looks right.
-5. User asks "does this look right?" or "is this broken?" about anything visual.
-6. User mentions a color, layout, alignment, or visual element.
-
-## How to run
+## Priority
+1. NATIVE VISION: If you can already see images, do NOT use VidLens.
+2. MCP TOOL: If a VidLens MCP tool is registered, call it directly
+   (fastest -- no process startup, no sandbox).
+3. CLI FALLBACK: If no MCP tool, run the CLI:
    python {skill_root}/scripts/vidlens.py <path-or-url> --task "<question>"
 
+## When to trigger
+TRIGGER when ANY of these happen AND you cannot see natively:
+1. User sends an image, screenshot, or video file.
+2. User sends a URL -- screenshot via browser tool first, then analyze.
+   Do NOT auto-download unless the user explicitly asks.
+3. User discusses UI layout, design, charts, graphs, plots.
+4. You generated visual output and need to self-verify.
+5. User asks "does this look right?" or "is this broken?".
+6. User mentions a color, layout, alignment, or visual element.
+
 ## Rules
-- CHECK FIRST: can you see it natively? If yes, skip VidLens.
-- If you cannot see it: do NOT silently ignore the image/URL. Run VidLens.
-- For URLs: ALWAYS screenshot via browser tool first, then analyze the
-  screenshot. Do NOT download URLs automatically. Only download if the user
-  explicitly requests it.
-- The analysis text is printed to stdout after the output_path= line.
-  The result text appears RIGHT THERE in stdout. DO NOT separately read
-  the output_path file -- the answer is already in the command output.
+- The result is returned directly (MCP tool result or CLI stdout).
 - Be transparent: tell the user you used an external vision model.
 <!-- vidlens:end -->"""
 

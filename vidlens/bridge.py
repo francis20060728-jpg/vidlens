@@ -1,7 +1,9 @@
-﻿# -*- coding: utf-8 -*-
-"""Vision bridge: send JPEG bytes + a text prompt to a vision model.
+# -*- coding: utf-8 -*-
+"""Vision bridge: send image bytes + a text prompt to a vision model.
 
 Works with any endpoint that follows the OpenAI chat/completions format.
+Supports reasoning models (mimo-v2.5, o1, o3, deepseek-r1, qwq) that output
+reasoning_content before the actual content.
 """
 from __future__ import annotations
 
@@ -27,15 +29,13 @@ class Bridge:
     @classmethod
     def from_config(cls, cfg):
         """Build a Bridge from a config dict."""
-        # New keys are primary; old keys kept as backward-compatible fallback.
         endpoint = cfg.get("api_url") or cfg.get("endpoint") or ""
         secret = cfg.get("api_key") or cfg.get("secret") or ""
         model = cfg.get("model_name") or cfg.get("vision_model") or cfg.get("model") or ""
         if not endpoint or not model:
             raise ValueError(
                 "Config incomplete. Set 'api_url', 'api_key', and "
-                "'model_name' in config.yaml."
-            )
+                "'model_name' in config.yaml.")
         return cls(endpoint, secret, model,
                    max_tokens=cfg.get("response_tokens", 4000),
                    temperature=cfg.get("sampling_temp", 0.1),
@@ -46,6 +46,12 @@ class Bridge:
         b64 = base64.b64encode(image_bytes).decode("ascii")
         data_url = "data:image/jpeg;base64," + b64
         url = self.endpoint + "/chat/completions"
+        max_tok = self.max_tokens
+        name_low = (self.model or "").lower()
+        _HINTS = ("o1", "o3", "o4", "mimo", "deepseek-r1",
+                  "deepseek-reasoner", "qwq", "thinking")
+        if any(h in name_low for h in _HINTS):
+            max_tok = max_tok * 3
         payload = {
             "model": self.model,
             "messages": [{
@@ -55,7 +61,7 @@ class Bridge:
                     {"type": "image_url", "image_url": {"url": data_url}},
                 ],
             }],
-            "max_tokens": self.max_tokens,
+            "max_tokens": max_tok,
             "temperature": self.temperature,
         }
         headers = {"Content-Type": "application/json"}
@@ -71,7 +77,18 @@ class Bridge:
                 err = result.get("error", {})
                 msg = err.get("message", str(result))[:500] if isinstance(err, dict) else str(result)[:500]
                 raise RuntimeError("Unexpected API response: {}".format(msg))
-            return choices[0]["message"]["content"].strip()
+            msg_obj = choices[0]["message"]
+            content_val = msg_obj.get("content")
+            if isinstance(content_val, list):
+                content_val = "\n".join(
+                    p.get("text", "") for p in content_val
+                    if isinstance(p, dict) and p.get("type") == "text")
+            text = (content_val or "").strip()
+            if not text and msg_obj.get("reasoning_content"):
+                text = msg_obj["reasoning_content"].strip()
+            if not text:
+                raise RuntimeError("API returned empty content: " + str(result)[:300])
+            return text
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:500]
             raise RuntimeError("HTTP {}: {}".format(exc.code, detail))

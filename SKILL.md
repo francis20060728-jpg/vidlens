@@ -1,33 +1,17 @@
 ---
 name: vidlens
-description: Give a text-only AI agent vision by routing images/videos through an external vision model. Use when you cannot view an image directly. Returns plain text via output_path=<file>. Zero pip deps for images.
+description: Vision for text-only agents via external vision model. Use ONLY if you cannot see images natively. MCP tool or CLI. Zero pip deps for images.
 ---
 
 # VidLens
 
-See images and videos by routing them through a vision model.
+Vision bridge for text-only agents. Skip if you can already see images.
 
-## Run
+## Use
 
-```bash
-python scripts/vidlens.py image.png "What is this?"
-```
+- **MCP tool**: call `look(path, prompt)` directly if available.
+- **CLI**: `python scripts/vidlens.py <image> "question"`
 
-- Single image, multiple images, or video (needs ffmpeg).
-- Question goes as trailing positional arg or --task "..."
-- First time? Run --status. If NEEDS CONFIG, run --init, then edit
-  config.yaml (api_url, api_key, model_name).
-  Full walkthrough: docs/SETUP.md
+First time? `--status` / `--init` / edit config.yaml. See [docs/](docs/SETUP.md).
 
-## Read the result
-
-The analysis text is printed to stdout (after the output_path= line).
-Read it directly from the command output. DO NOT separately read the
-output_path file -- the answer is already there. Tell the user you used
-an external vision model.
-
-## Deeper docs (read on demand)
-
-- Setup details: [docs/SETUP.md](docs/SETUP.md)
-- Advanced (failover, reasoning models, OCR, video, MCP): [docs/ADVANCED.md](docs/ADVANCED.md)
-- Troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+Be transparent: tell the user you used an external vision model.
