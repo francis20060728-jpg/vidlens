@@ -3,15 +3,23 @@
 All notable changes to this project are documented here.
 Versions follow [semantic versioning](https://semver.org).
 
-## [Unreleased]
+## [2.1.0] - 2026-08-14
 
 ### Added
-- One-Click Deploy section in all 9 languages (tell your agent to install)
-- MCP Tools table (`look`, `list_media`, `find_and_look`) with full descriptions in all languages
-- Contact section with author email in all languages
+- Capability-first vision policy: explicitly multimodal models use native vision; text-only and unknown-capability providers use VidLens and receive text only
+- Bounded latency architecture with image downscaling, per-provider timeouts, a total failover deadline, and a smaller PASS/FAIL response budget
+- Concise `verify_page` and `verify_output` templates that combine review method with caller intent
+- MCP runtime now shares URL handling, media preparation, provider failover, OCR fallback, and timeout behavior with the CLI
+- Automated boundary tests for media discovery, CLI parsing, URL limits, environment overrides, outbound request shape, timeout bounds, text-safe rules, and video fallback
 
 ### Changed
 - Reasoning model list no longer hardcoded (was mimo-v2.5, o1, o3, etc. -- now says "auto-detects thinking models")
+- MCP now reuses the canonical CLI runtime for URL handling, image preparation, provider failover, OCR fallback, and timeouts
+- Verification prompts now return a concise VERDICT/EVIDENCE/BLOCKERS/NEXT FIX and combine templates with caller intent
+- Large images are downscale-re-encoded before upload; provider failover is bounded by `total_timeout`
+- Structured verification prompts use a smaller token budget than general descriptions
+- Tool descriptions and the AGENTS rule prevent generic image-view tools from inserting image content into text-only model conversations
+- Documented that direct image input reaches a text-only provider before agent rules can run; use a path/URL so VidLens returns text
 
 ## [2.0.0] - 2026-08-14
 
@@ -54,7 +62,7 @@ Versions follow [semantic versioning](https://semver.org).
 ### Added
 - Initial release
 
-[Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v2.0.0...HEAD
+[2.1.0]: https://github.com/francis20060728-jpg/vidlens/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v2.0.0
 [1.5.1]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.5.1
 [1.5.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.5.0

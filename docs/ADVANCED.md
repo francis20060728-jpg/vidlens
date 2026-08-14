@@ -37,6 +37,19 @@ is_reasoning_model: true
 If `content` is empty but `reasoning_content` has text, VidLens uses the
 reasoning output as the result.
 
+## Latency Controls
+
+VidLens optimizes for bounded response time:
+
+- Images larger than `max_image_side` are downscale-re-encoded before upload.
+- `http_timeout` bounds each provider request (default 45 seconds).
+- `total_timeout` bounds the entire provider failover chain (default 60 seconds).
+- Structured `verify_page`/`verify_output` prompts use `verification_tokens`
+  instead of the larger general `response_tokens` budget.
+
+Use `reasoning_effort: low` when the provider supports it. For visual checks,
+pass concrete acceptance criteria in `prompt`; avoid broad description requests.
+
 ## Local OCR Fallback
 
 When all cloud providers fail for an **image** (not video), VidLens
@@ -100,8 +113,9 @@ python scripts/vidlens.py --remove-agents      # remove from all
 python scripts/vidlens.py --status             # check per-agent status
 ```
 
-The rule is transparent: it tells the agent to check first if it can see
-natively, and if not, use VidLens and inform the user.
+The rule is capability-first. Explicitly multimodal models use native vision;
+text-only or unknown-capability providers route media paths/URLs through
+VidLens and receive text only. VidLens use is disclosed to the user.
 
 ### Supported agents
 

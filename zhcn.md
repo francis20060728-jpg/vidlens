@@ -8,7 +8,7 @@
 
 VidLens 将视觉文件路由到外部视觉模型，返回纯文本。任何智能体 -- Codex、Claude Code、Cursor、Cline -- 无需原生图像支持即可检查、验证和响应视觉内容。
 
-> **如果你的模型本身支持视觉，请不要使用 VidLens。** 它只用于无法看图的纯文本模型。
+> **如果当前模型/提供商明确是多模态，请使用原生视觉。** 纯文本或能力未知时，VidLens 使用外部视觉并只返回文本。
 
 ## 工作原理
 
@@ -91,7 +91,7 @@ python scripts/vidlens.py --remove-agents
 python scripts/vidlens.py --status
 ```
 
-规则会先检查原生视觉：如果模型能看图就跳过 VidLens。MCP 工具优先于 CLI。
+规则会先确认实际模型/提供商能力。明确多模态的模型使用原生视觉，并可将路径加载到原生输入；纯文本或能力未知时由 VidLens 返回纯文本。原生图像请求被拒绝后不会重试。
 
 ## 功能
 
@@ -111,9 +111,14 @@ python scripts/vidlens.py --status
 | `api_url` | `""` | 视觉 API 地址 |
 | `api_key` | `""` | API 密钥 |
 | `model_name` | `""` | 模型名称 |
-| `response_tokens` | `4000` | 最大响应 token |
+| `response_tokens` | `1200` | 最大响应 token |
+| `verification_tokens` | `350` | PASS/FAIL 验证用更短预算 |
+| `http_timeout` | `45` | 单次请求超时 |
+| `total_timeout` | `60` | 总超时 |
+| `reasoning_effort` | `""` | 可选推理强度 |
+| `max_image_side` | `1600` | 图片最大边长 |
+| `image_jpeg_quality` | `90` | JPEG 质量 |
 | `sampling_temp` | `0.1` | 温度（0.1 精确，0.7 创意） |
-| `http_timeout` | `120` | 超时秒数 |
 | `is_reasoning_model` | `false` | 推理模型设 true |
 | `fallback_N_url` | `""` | 备用提供商 N 地址 |
 

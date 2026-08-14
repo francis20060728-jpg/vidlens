@@ -8,7 +8,7 @@
 
 VidLens は視覚ファイルを外部のビジョンモデルにルーティングし、プレーンテキストを返します。Codex、Claude Code、Cursor、Cline など、ネイティブ画像サポートなしで視覚コンテンツを検査、検証、応答できます。
 
-> **モデルがネイティブで視覚をサポートする場合は VidLens を使わないでください。** テキスト専用モデル専用です。
+> **現在のモデル/プロバイダが明示的にマルチモーダルならネイティブ視覚を使ってください。** テキスト専用または能力不明の場合、VidLens は外部視覚を使いテキストのみ返します。
 
 ## 仕組み
 
@@ -90,7 +90,7 @@ python scripts/vidlens.py --remove-agents
 python scripts/vidlens.py --status
 ```
 
-ネイティブ視覚を先にチェック：モデルが画像を見られるなら VidLens をスキップ。
+まず実際のモデル/プロバイダ能力を確認します。明示的にマルチモーダルのモデルはネイティブ視覚を使い、パスをネイティブ入力へ読み込めます。テキスト専用または能力不明のときは VidLens がテキストのみ返します。拒否されたネイティブ画像リクエストは再試行しません。
 
 ## 機能
 
@@ -110,7 +110,13 @@ python scripts/vidlens.py --status
 | `api_url` | `""` | ビジョン API URL |
 | `api_key` | `""` | API キー |
 | `model_name` | `""` | モデル名 |
-| `response_tokens` | `4000` | 最大トークン |
+| `response_tokens` | `1200` | 最大トークン |
+| `verification_tokens` | `350` | PASS/FAIL検証用の短い予算 |
+| `http_timeout` | `45` | リクエストごとのタイムアウト |
+| `total_timeout` | `60` | 合計タイムアウト |
+| `reasoning_effort` | `""` | 任意の推論強度 |
+| `max_image_side` | `1600` | 画像の最大辺 |
+| `image_jpeg_quality` | `90` | JPEG品質 |
 | `is_reasoning_model` | `false` | 推論モデルは true |
 
 ## トラブルシューティング

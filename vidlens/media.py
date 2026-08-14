@@ -17,6 +17,8 @@ _VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv", ".m4v"}
 
 # All supported extensions (used by file search).
 _ALL_EXTS = _STATIC_EXTS | _VIDEO_EXTS
+_SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", "node_modules",
+              ".venv", "venv", "dist", "build"}
 
 
 def detect_kind(path: str) -> MediaKind:
@@ -38,7 +40,8 @@ def find_media_files(directory, keyword=None, max_results=20):
     if not os.path.isdir(directory):
         return hits
     kw = keyword.lower().strip() if keyword else None
-    for root, _dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
         for fname in files:
             ext = os.path.splitext(fname)[1].lower()
             if ext not in _ALL_EXTS:

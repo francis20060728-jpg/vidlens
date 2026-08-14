@@ -8,7 +8,7 @@ Da a los agentes de IA de solo texto la capacidad de ver imágenes y videos.
 
 VidLens enruta archivos visuales a través de un modelo de visión externo y devuelve texto sin formato.
 
-> **Si tu modelo soporta visión nativamente, NO uses VidLens.** Solo para modelos de texto.
+> **Si el modelo/proveedor actual es explícitamente multimodal, usa visión nativa.** Con texto puro o capacidad desconocida, VidLens usa visión externa y devuelve solo texto.
 
 ## Cómo funciona
 
@@ -89,7 +89,7 @@ python scripts/vidlens.py --remove-agents
 python scripts/vidlens.py --status
 ```
 
-Verifica primero la visión nativa: si el modelo ve imágenes, VidLens se omite.
+Comprueba primero la capacidad real del modelo/proveedor. Los modelos explícitamente multimodales usan visión nativa y pueden cargar una ruta en la entrada nativa; con texto puro o capacidad desconocida, VidLens devuelve solo texto. Las solicitudes nativas rechazadas no se reintentan.
 
 ## Características
 
@@ -109,7 +109,13 @@ Verifica primero la visión nativa: si el modelo ve imágenes, VidLens se omite.
 | `api_url` | `""` | URL base API de visión |
 | `api_key` | `""` | Clave API |
 | `model_name` | `""` | Nombre del modelo |
-| `response_tokens` | `4000` | Tokens máx |
+| `response_tokens` | `1200` | Tokens máx |
+| `verification_tokens` | `350` | Presupuesto menor para verificaciones PASS/FAIL |
+| `http_timeout` | `45` | Límite por solicitud |
+| `total_timeout` | `60` | Límite total |
+| `reasoning_effort` | `""` | Esfuerzo de razonamiento opcional |
+| `max_image_side` | `1600` | Lado máximo de imagen |
+| `image_jpeg_quality` | `90` | Calidad JPEG |
 | `is_reasoning_model` | `false` | Modelos de razonamiento: true |
 
 ## Solución de problemas

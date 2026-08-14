@@ -18,7 +18,7 @@ class Bridge:
     """Thin client for an OpenAI-compatible vision API."""
 
     def __init__(self, endpoint, secret, model,
-                 max_tokens=4000, temperature=0.1, timeout=120):
+                 max_tokens=1200, temperature=0.1, timeout=45):
         self.endpoint = endpoint.rstrip("/")
         self.secret = secret
         self.model = model
@@ -37,9 +37,9 @@ class Bridge:
                 "Config incomplete. Set 'api_url', 'api_key', and "
                 "'model_name' in config.yaml.")
         return cls(endpoint, secret, model,
-                   max_tokens=cfg.get("response_tokens", 4000),
+                  max_tokens=cfg.get("response_tokens", 1200),
                    temperature=cfg.get("sampling_temp", 0.1),
-                   timeout=cfg.get("http_timeout", 120))
+                  timeout=cfg.get("http_timeout", 45))
 
     def ask(self, image_bytes, prompt):
         """Send one image + prompt, return the model's text response."""

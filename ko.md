@@ -8,7 +8,7 @@
 
 VidLens는 시각 파일을 외부 비전 모델로 라우팅하여 일반 텍스트로 반환합니다.
 
-> **모델이 네이티브로 시각을 지원하면 VidLens를 사용하지 마세요.** 텍스트 전용 모델 전용입니다.
+> **현재 모델/제공자가 명확히 멀티모달이면 네이티브 시각을 사용하세요.** 텍스트 전용이거나 능력을 알 수 없으면 VidLens가 외부 시각을 사용하고 텍스트만 반환합니다.
 
 ## 작동 방식
 
@@ -89,7 +89,7 @@ python scripts/vidlens.py --remove-agents
 python scripts/vidlens.py --status
 ```
 
-네이티브 시각을 먼저 확인: 모델이 이미지를 볼 수 있으면 VidLens를 건너뜁니다.
+먼저 실제 모델/제공자 능력을 확인합니다. 명확한 멀티모달 모델은 네이티브 시각을 사용하고 경로를 네이티브 입력으로 로드할 수 있습니다. 텍스트 전용이거나 능력을 알 수 없으면 VidLens가 텍스트만 반환합니다. 거부된 네이티브 이미지 요청은 재시도하지 않습니다.
 
 ## 기능
 
@@ -109,7 +109,13 @@ python scripts/vidlens.py --status
 | `api_url` | `""` | 비전 API URL |
 | `api_key` | `""` | API 키 |
 | `model_name` | `""` | 모델 이름 |
-| `response_tokens` | `4000` | 최대 토큰 |
+| `response_tokens` | `1200` | 최대 토큰 |
+| `verification_tokens` | `350` | PASS/FAIL 검증용 짧은 예산 |
+| `http_timeout` | `45` | 요청별 제한 시간 |
+| `total_timeout` | `60` | 전체 제한 시간 |
+| `reasoning_effort` | `""` | 선택적 추론 강도 |
+| `max_image_side` | `1600` | 이미지 최대 변 |
+| `image_jpeg_quality` | `90` | JPEG 품질 |
 | `is_reasoning_model` | `false` | 추론 모델은 true |
 
 ## 문제 해결

@@ -35,6 +35,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
+import time
 
 # ---------------------------------------------------------------------------
 # Force UTF-8 on Windows to prevent GBK encoding crashes in subprocess calls
@@ -69,10 +70,18 @@ through an external vision model. Use it ONLY when you cannot natively
 inspect visual content.
 
 ## Priority
-1. NATIVE VISION: If you can already see images, do NOT use VidLens.
-2. MCP TOOL: If a VidLens MCP tool is registered, call it directly
-   (fastest -- no process startup, no sandbox).
-3. CLI FALLBACK: If no MCP tool, run the CLI:
+1. NATIVE VISION: First confirm actual model/provider capability. If it is
+   explicitly known to support vision, use native vision and do NOT use
+   VidLens; a media path may be loaded into native input for that purpose.
+   Actual image pixels already present in model input are also native vision.
+   If the model is known to be text-only or capability is unknown, a media
+   path or URL is TEXT -- not native vision -- and must not be loaded with a
+   generic image-view tool; route it through VidLens. If native input is
+   rejected because image content is unsupported, do not retry it; use VidLens.
+2. MCP TOOL: For a media path/URL without native pixels, call a registered
+   VidLens MCP tool directly (fastest -- no process startup).
+3. CLI FALLBACK: For a media path/URL without native pixels and no MCP tool
+   is registered, run the CLI:
    python {skill_root}/scripts/vidlens.py <path-or-url> --task "<question>"
 
 ## When to trigger
@@ -81,12 +90,21 @@ TRIGGER when ANY of these happen AND you cannot see natively:
 2. User sends a URL -- screenshot via browser tool first, then analyze.
    Do NOT auto-download unless the user explicitly asks.
 3. User discusses UI layout, design, charts, graphs, plots.
-4. You generated visual output and need to self-verify.
+4. You generated or changed frontend UI, charts, plots, documents, or other
+   visual output: capture/render it, inspect once, fix only blocking issues,
+   then recheck once. Stop after two vision checks unless the user asks.
 5. User asks "does this look right?" or "is this broken?".
 6. User mentions a color, layout, alignment, or visual element.
 
 ## Rules
 - The result is returned directly (MCP tool result or CLI stdout).
+- With an exact media path, call `look` directly; do not call `list_media`
+  first. With only a vague filename, prefer `find_and_look` over
+  `list_media` followed by `look`.
+- For frontend or generated-output verification, use prompt_name
+  `verify_page` or `verify_output` and put the intended behavior in `prompt`.
+- Ask for concise, evidence-based verdicts. Avoid broad "describe everything"
+  prompts when a pass/fail check is enough.
 - Be transparent: tell the user you used an external vision model.
 <!-- vidlens:end -->"""
 
@@ -278,16 +296,28 @@ def separate_media_and_task(raw_media, explicit_task):
 # ---------------------------------------------------------------------------
 
 def resolve_prompt(prompt=None, prompt_name=None, kind="image", count=1):
-    """Return the text prompt to send to the vision model."""
-    if prompt and prompt.strip():
-        return prompt.strip()
+    """Return the text prompt to send to the vision model.
+
+    A named template supplies the review method; a direct prompt supplies the
+    concrete intent. Combining them lets a frontend agent use ``verify_page``
+    while also stating what the page is supposed to show.
+    """
+    template = None
     if prompt_name:
         path = _PROMPTS_DIR / (prompt_name + ".txt")
         if path.is_file():
-            return path.read_text(encoding="utf-8").strip()
-        print("ERROR: prompt '{}' not found in prompts/".format(prompt_name),
-              file=sys.stderr)
-        sys.exit(1)
+            template = path.read_text(encoding="utf-8").strip()
+        else:
+            print("ERROR: prompt '{}' not found in prompts/".format(prompt_name),
+                  file=sys.stderr)
+            sys.exit(1)
+    context = (prompt or "").strip()
+    if template and context:
+        return template + "\n\nAgent context / intended result:\n" + context
+    if template:
+        return template
+    if context:
+        return context
     if kind == "video":
         return (
             "Please fully interpret this video. Summarize the main topic and "
@@ -304,6 +334,67 @@ def resolve_prompt(prompt=None, prompt_name=None, kind="image", count=1):
         "Describe what you observe in this image in detail: objects, people, "
         "text, visual layout, and anything notable."
     )
+
+
+def prepare_image(source, cfg, tmp_dir):
+    """Downscale/re-encode an image when that reduces upload latency.
+
+    Pillow is tried first, then OpenCV; both are optional. The original file
+    is returned unchanged when no optional imaging library is available.
+    """
+    source = Path(source)
+    max_side = int(cfg.get("max_image_side", 1600))
+    quality = int(cfg.get("image_jpeg_quality", 90))
+    if max_side <= 0:
+        return source
+
+    prepared = tmp_dir / "prepared-image.jpg"
+    try:
+        from PIL import Image
+        with Image.open(source) as image:
+            image = image.convert("RGB")
+            resized = max(image.size) > max_side
+            if max(image.size) > max_side:
+                ratio = max_side / max(image.size)
+                image = image.resize((
+                    max(1, round(image.width * ratio)),
+                    max(1, round(image.height * ratio)),
+                ))
+            image.save(prepared, "JPEG", quality=quality, optimize=False)
+            if resized:
+                return prepared
+        if prepared.stat().st_size < source.stat().st_size:
+            return prepared
+        return source
+    except ImportError:
+        pass
+    except Exception:
+        return source
+
+    try:
+        import cv2
+        import numpy as np
+        image = cv2.imdecode(np.fromfile(str(source), dtype=np.uint8),
+                             cv2.IMREAD_COLOR)
+        if image is None:
+            return source
+        height, width = image.shape[:2]
+        if max(height, width) > max_side:
+            ratio = max_side / max(height, width)
+            image = cv2.resize(image,
+                               (round(width * ratio), round(height * ratio)))
+        ok, buffer = cv2.imencode(".jpg", image,
+                                  [int(cv2.IMWRITE_JPEG_QUALITY), quality])
+        if ok:
+            prepared.write_bytes(buffer.tobytes())
+            if prepared.stat().st_size < source.stat().st_size:
+                return prepared
+        return source
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    return source
 
 
 # ---------------------------------------------------------------------------
@@ -383,7 +474,8 @@ def compress_video(source, destination):
          "-c:a", "aac", "-b:a", "64k", "-ac", "1",
          "-movflags", "+faststart",
          str(destination)],
-        check=True, capture_output=True, text=True, timeout=600)
+        check=True, capture_output=True, text=True,
+        timeout=90)
 
 
 def prepare_video(path, tmp_dir, index):
@@ -484,8 +576,16 @@ def _is_reasoning_model(model_name, cfg):
     return any(hint in name for hint in REASONING_MODEL_HINTS)
 
 
+def response_token_budget(prompt, cfg):
+    """Choose a smaller generation budget for structured verification prompts."""
+    is_verification = "VERDICT:" in prompt and "NEXT FIX:" in prompt
+    return int(
+        cfg.get("verification_tokens", 350) if is_verification
+        else cfg.get("response_tokens", 1200))
+
+
 def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
-                     ):
+                       timeout=None):
     """Send one media file to one specific provider. Returns text or raises.
 
     Handles reasoning/thinking models (o1, mimo-v2.5, etc.) that output
@@ -506,7 +606,7 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
             {"type": "text", "text": prompt},
             {"type": "image_url", "image_url": {"url": url_data}},
         ]
-    base_tokens = int(cfg.get("response_tokens", 4000))
+    base_tokens = response_token_budget(prompt, cfg)
     # Reasoning models need more room from the start (no wasteful retry)
     if _is_reasoning_model(model, cfg):
         base_tokens *= 3
@@ -516,13 +616,16 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
         "max_tokens": base_tokens,
         "temperature": float(cfg.get("sampling_temp", 0.1)),
     }
+    reasoning_effort = str(cfg.get("reasoning_effort", "")).lower()
+    if reasoning_effort:
+        payload["reasoning_effort"] = reasoning_effort
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = "Bearer " + api_key
     endpoint = api_url.rstrip("/") + "/chat/completions"
     body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(endpoint, data=body, headers=headers, method="POST")
-    timeout = int(cfg.get("http_timeout", 120))
+    timeout = timeout or int(cfg.get("http_timeout", 45))
     try:
         resp = urllib.request.urlopen(req, timeout=timeout)
         result = json.loads(resp.read().decode("utf-8"))
@@ -566,12 +669,22 @@ def analyze_image(cfg, media_path, kind, prompt):
             "Config incomplete. Set api_url, api_key, and model_name in: "
             + str(_CONFIG_PATH))
     errors = []
+    per_request_timeout = int(cfg.get("http_timeout", 45))
+    deadline = time.monotonic() + float(cfg.get("total_timeout", 60))
     for i, (url, key, model) in enumerate(chain):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            errors.append("provider {}: skipped because total_timeout expired"
+                          .format(i + 1))
+            break
         label = "provider {}".format(i + 1) if i > 0 else "primary"
         print("[{}] {} / {}".format(label, url, model), file=sys.stderr)
         try:
             return _call_one_provider(url, key, model, media_path, kind,
-                                      prompt, cfg)
+                                      prompt, cfg,
+                                      timeout=max(1, min(
+                                          per_request_timeout,
+                                          round(remaining))))
         except Exception as exc:
             errors.append("{}: {}".format(label, exc))
             print("[{}] failed: {}".format(label, exc), file=sys.stderr)
@@ -987,8 +1100,6 @@ def main():
         print_setup_guide()
         return 1
 
-    prompt = resolve_prompt(args.task, args.prompt_name)
-
     with tempfile.TemporaryDirectory(prefix="vidlens-") as tmp:
         tmp_dir = Path(tmp)
         results = []
@@ -1006,10 +1117,13 @@ def main():
                     print("ERROR: File not found: {}".format(raw_path), file=sys.stderr)
                     return 1
                 kind = media_kind(media_path)
+            prompt = resolve_prompt(args.task, args.prompt_name, kind=kind,
+                                    count=1)
             if kind == "video":
                 text = analyze_video(cfg, media_path, tmp_dir, index, prompt,
                                      args.frames)
             else:
+                media_path = prepare_image(media_path, cfg, tmp_dir)
                 text = call_vision(cfg, media_path, kind, prompt)
             results.append((media_path, kind, text))
 

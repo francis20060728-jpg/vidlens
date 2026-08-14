@@ -11,9 +11,10 @@
 | Video fails | Install [ffmpeg](https://ffmpeg.org) (preferred) or `pip install opencv-python numpy` |
 | All providers failed | A local OCR fallback kicks in for images. Check your API key and URL. |
 | Chinese path garbled | Fixed since v1.2 -- stdout/stderr forced to UTF-8 on Windows |
-| Very slow / appears stuck | Model may be a reasoning model (thinking before answering). VidLens auto-triples max_tokens. Or set `is_reasoning_model: true`. |
+| Very slow / appears stuck | Set `reasoning_effort: low` when supported, keep `response_tokens` near 1200, and lower `http_timeout`/`total_timeout`. Provider failover stops at the total deadline. |
 | Result is just thinking / no answer | The model spent all tokens on reasoning. Set `is_reasoning_model: true` to get more tokens upfront, or increase `response_tokens` |
 | Image too large error | Some APIs reject large images. VidLens auto-compresses, but very high-res images may need manual resizing |
+| Direct image input crashes a text-only Codex thread | Direct image content is sent in the first model request, before an agent rule can intercept it. Send the image path/URL instead and let VidLens return text. A text-only provider adapter should reject non-text content locally before upload. |
 
 ## Slow on first run (sandbox approval)
 

@@ -1,293 +1,274 @@
 # -*- coding: utf-8 -*-
-"""MCP server: gives text-only AI agents the ability to see images and videos.
+"""MCP server for fast, text-only visual inspection.
 
-Exposes three tools:
-  - look:           analyze a single image or video file
-  - list_media:     discover image/video files in a directory
-  - find_and_look:  search + analyze in one call (convenience)
-
-Register with:
-
-    "mcpServers": {
-        "vidlens": {
-            "command": "python",
-            "args": ["/abs/path/to/vidlens/server.py"],
-            "env": {
-                "VIDLENS_ENDPOINT": "https://api.openai.com/v1",
-                "VIDLENS_SECRET": "sk-...",
-                "VIDLENS_MODEL": "gpt-4o"
-            }
-        }
-    }
-
-Or skip the env block and fill in config.yaml instead.
-
-Custom prompts:
-  Drop .txt files in prompts/ next to the package. Reference them by name
-  (without .txt) via the 'prompt_name' argument on any tool.
+The server reuses the canonical CLI runtime so MCP receives the same provider
+failover, local-OCR fallback, URL handling, media preparation, and timeout
+behavior as command-line users.
 """
 from __future__ import annotations
 
+import asyncio
+import importlib.util
 import os
+from pathlib import Path
 import sys
+import tempfile
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_PKG_ROOT = os.path.dirname(_HERE)
-sys.path.insert(0, _PKG_ROOT)
+_HERE = Path(__file__).resolve().parent
+_PKG_ROOT = _HERE.parent
+_RUNTIME_PATH = _PKG_ROOT / "scripts" / "vidlens.py"
+if str(_PKG_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PKG_ROOT))
 
-_PROMPTS_DIR = os.path.join(_PKG_ROOT, "prompts")
-
-from vidlens.media import load_media, MediaKind, find_media_files
-from vidlens.bridge import Bridge, load_config
-
-_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".tif"}
-_VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv", ".m4v"}
+from vidlens.media import find_media_files
 
 
-def _read_image_bytes(path):
-    """Read an image as raw bytes without cv2 (zero-dependency path)."""
-    with open(path, "rb") as f:
-        return f.read()
+def _load_runtime():
+    spec = importlib.util.spec_from_file_location("vidlens_runtime", _RUNTIME_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load VidLens runtime: " + str(_RUNTIME_PATH))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def _resolve_prompt(prompt=None, prompt_name=None):
-    """Return a prompt string from direct text, a named template, or None."""
-    if prompt:
-        return prompt
-    if prompt_name:
-        path = os.path.join(_PROMPTS_DIR, prompt_name + ".txt")
-        if os.path.isfile(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return f.read().strip()
-        return "ERROR: prompt '{}' not found in prompts/".format(prompt_name)
-    return None
-
-
-def _default_prompt(kind, n):
-    if kind == MediaKind.VIDEO:
-        return ("You are looking at a contact sheet of {} frames "
-                "sampled from a video. Describe what you observe.".format(n))
-    return "Describe what you observe in this image."
+_RUNTIME = _load_runtime()
 
 
 def _look(media_path, prompt=None, prompt_name=None, frame_count=None):
-    """Core logic: load media, send to vision model, return text."""
-    cfg = load_config()
-    try:
-        bridge = Bridge.from_config(cfg)
-    except ValueError as exc:
-        return str(exc)
+    """Analyze one local/remote image or video through the shared runtime."""
+    cfg = _RUNTIME.load_config()
+    if not _RUNTIME.config_complete(cfg):
+        return "ERROR: Config incomplete. Set api_url, api_key, and model_name."
 
-    if not os.path.exists(media_path):
-        return "ERROR: File not found: " + media_path
-
-    ext = os.path.splitext(media_path)[1].lower()
-    if ext in _IMAGE_EXTS:
-        # Zero-dependency path: read raw bytes, skip cv2 entirely
+    with tempfile.TemporaryDirectory(prefix="vidlens-mcp-") as temporary:
+        temporary_dir = Path(temporary)
         try:
-            img_bytes = _read_image_bytes(media_path)
-        except OSError as exc:
-            return "ERROR: Cannot read image: {}".format(exc)
-        resolved = _resolve_prompt(prompt, prompt_name)
-        if resolved and resolved.startswith("ERROR:"):
-            return resolved
-        final_prompt = resolved or "Describe what you observe in this image."
-        return bridge.ask(img_bytes, final_prompt)
+            if _RUNTIME._is_url(media_path):
+                media_file, kind = _RUNTIME._download_url(
+                    media_path, temporary_dir, 1)
+            else:
+                media_file = Path(media_path).expanduser().resolve()
+                if not media_file.is_file():
+                    return "ERROR: File not found: " + str(media_file)
+                kind = _RUNTIME.media_kind(media_file)
 
-    # Video path: needs cv2/numpy (lazy import via media.py)
-    n = frame_count if frame_count is not None else cfg.get("sample_count", 9)
-    columns = cfg.get("grid_columns", 3)
-    cell_scale = cfg.get("cell_scale", 1.0)
-    jpeg_quality = cfg.get("jpeg_quality", 95)
-    max_w = cfg.get("max_sheet_width", 2400)
-    label_frames = cfg.get("label_frames", True)
+            final_prompt = _RUNTIME.resolve_prompt(
+                prompt=prompt,
+                prompt_name=prompt_name,
+                kind=kind,
+                count=frame_count or 1,
+            )
 
-    img_bytes, kind = load_media(
-        media_path, frame_count=n, columns=columns,
-        cell_scale=cell_scale, jpeg_quality=jpeg_quality,
-        max_sheet_width=max_w, label_frames=label_frames)
-    if not img_bytes:
-        return "ERROR: Cannot load: " + media_path
-
-    resolved = _resolve_prompt(prompt, prompt_name)
-    if resolved and resolved.startswith("ERROR:"):
-        return resolved
-    final_prompt = resolved or _default_prompt(kind, n)
-
-    return bridge.ask(img_bytes, final_prompt)
+            if kind == "video":
+                return _RUNTIME.analyze_video(
+                    cfg, media_file, temporary_dir, 1, final_prompt,
+                    frame_count or int(cfg.get("sample_count", 9)))
+            prepared = _RUNTIME.prepare_image(media_file, cfg, temporary_dir)
+            return _RUNTIME.call_vision(cfg, prepared, "image", final_prompt)
+        except Exception as exc:
+            return "ERROR: {}".format(exc)
 
 
-# Tool descriptions: this is what teaches the agent WHEN to use the tools.
 _LOOK_DESC = (
-    "Analyze an image or video file using an external vision model. "
-    "Use this when:\n"
-    "1. You generated visual output (images, videos, plots, diagrams) and "
-    "need to verify or describe the result yourself.\n"
-    "2. A user sent you an image or video and you need to see its content "
-    "to respond (you are a text-only model but this tool gives you vision).\n"
-    "3. You need to inspect, compare, count, or quality-check any visual file.\n"
-    "Videos are automatically sampled into a labeled contact sheet before "
-    "analysis. Pass 'prompt_name' to use a custom prompt template from "
-    "prompts/ (e.g. 'verify_output', 'describe', 'quality_check')."
+    "SEE and verify one image, screenshot, chart, plot, or video when native "
+    "vision is unavailable. If actual image pixels are already in model input, "
+    "or the current model/provider is explicitly multimodal, do not call this "
+    "tool. For text-only or unknown capability, call it after generating or "
+    "changing frontend UI or other visual output. It keeps image bytes outside "
+    "the main conversation and returns text only. "
+    "Videos become a labeled contact "
+    "sheet. Supports local paths and direct media URLs. For fast verification "
+    "use prompt_name='verify_page' or 'verify_output', and put the intended "
+    "behavior or acceptance criteria in prompt. Ask for a concise PASS/FAIL "
+    "verdict and only visible blocking issues; avoid open-ended description "
+    "prompts."
 )
 
 _LIST_MEDIA_DESC = (
-    "Find image and video files in a directory. Use this to discover media "
-    "files by keyword when the user mentions a name but does not give a full "
-    "path, or to list what media exists in a project directory. "
-    "Searches recursively; filters by filename (case-insensitive substring). "
-    "Returns absolute paths sorted images-first, then newest-first."
+    "List image/video files recursively. Use only when the user wants a media "
+    "inventory or you need candidate paths. If you already intend to analyze a "
+    "file and know its path, call look instead; if you know only a vague name, "
+    "call find_and_look to avoid list_media followed by look. Skips common "
+    "dependency/build/VCS directories; returns absolute paths images-first, "
+    "then newest-first."
 )
 
 _FIND_AND_LOOK_DESC = (
-    "Search a directory for a media file by keyword, then analyze the best "
-    "match with the vision model. Convenience tool combining list_media + look. "
-    "Use when the user says something like 'look at the Argentina video' and "
-    "you need to find the file first, then analyze it."
+    "Find a media file by name, then visually inspect the best match in one "
+    "call. Prefer this over list_media + look when the user says only "
+    "'check the dashboard screenshot' or 'look at the demo video'. Use "
+    "prompt_name='verify_page'/'verify_output' and a concrete prompt for fast "
+    "PASS/FAIL verification. Skip it when native image pixels are already in "
+    "the model input."
 )
 
 
+def _tool_definitions():
+    try:
+        from mcp.types import Tool
+    except ImportError:
+        sys.stderr.write(
+            "MCP SDK not installed. Run: pip install 'mcp>=1.0,<2.0'\n"
+            "Or use CLI: python scripts/vidlens.py <media> --task <question>\n")
+        sys.exit(1)
+
+    return [
+        Tool(
+            name="look",
+            description=_LOOK_DESC,
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "media_path": {
+                        "type": "string",
+                        "description": "Absolute local media path or direct media URL",
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "description": (
+                            "Concrete question or intended result. Combined with "
+                            "prompt_name; used alone for a custom question."),
+                    },
+                    "prompt_name": {
+                        "type": "string",
+                        "description": (
+                            "Review template: verify_page, verify_output, "
+                            "describe, quality_check, object_inventory, or "
+                            "compare_frames."),
+                    },
+                    "frame_count": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 24,
+                        "description": "Frames sampled from video (default 9)",
+                    },
+                },
+                "required": ["media_path"],
+            },
+        ),
+        Tool(
+            name="list_media",
+            description=_LIST_MEDIA_DESC,
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "directory": {
+                        "type": "string",
+                        "description": "Directory to search (default: cwd)",
+                    },
+                    "keyword": {
+                        "type": "string",
+                        "description": "Case-insensitive filename filter (optional)",
+                    },
+                    "max_results": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 20,
+                    },
+                },
+            },
+        ),
+        Tool(
+            name="find_and_look",
+            description=_FIND_AND_LOOK_DESC,
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "directory": {
+                        "type": "string",
+                        "description": "Directory to search",
+                    },
+                    "keyword": {
+                        "type": "string",
+                        "description": "Keyword matched against filenames",
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "description": "Concrete question or intended result (optional)",
+                    },
+                    "prompt_name": {
+                        "type": "string",
+                        "description": "Review template (optional)",
+                    },
+                    "frame_count": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 24,
+                        "default": 9,
+                    },
+                },
+                "required": ["directory", "keyword"],
+            },
+        ),
+    ]
+
+
 def main():
-    """Run as an MCP server with stdio transport."""
+    """Run as an MCP stdio server without blocking the event loop."""
     try:
         from mcp.server import Server
         from mcp.server.stdio import stdio_server
-        from mcp.types import Tool, TextContent
-        import asyncio
+        from mcp.types import TextContent
     except ImportError:
         sys.stderr.write(
-            "MCP SDK not installed. Run: pip install mcp\n"
-            "Or use CLI: python -m vidlens media.mp4 \"prompt\"\n")
+            "MCP SDK not installed. Run: pip install 'mcp>=1.0,<2.0'\n"
+            "Or use CLI: python scripts/vidlens.py <media> --task <question>\n")
         sys.exit(1)
 
     server = Server("vidlens")
 
     @server.list_tools()
     async def list_tools():
-        return [
-            Tool(
-                name="look",
-                description=_LOOK_DESC,
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "media_path": {
-                            "type": "string",
-                            "description": "Absolute path to an image or video file",
-                        },
-                        "prompt": {
-                            "type": "string",
-                            "description": (
-                                "Instruction for the vision model. "
-                                "If omitted, a generic describe prompt is used."),
-                        },
-                        "prompt_name": {
-                            "type": "string",
-                            "description": (
-                                "Name of a custom prompt template in prompts/ "
-                                "(without .txt extension). Example: 'verify_output', "
-                                "'describe', 'quality_check'. Overrides 'prompt'."),
-                        },
-                        "frame_count": {
-                            "type": "integer",
-                            "description": "Frames to sample from video (default 9)",
-                            "default": 9,
-                        },
-                    },
-                    "required": ["media_path"],
-                },
-            ),
-            Tool(
-                name="list_media",
-                description=_LIST_MEDIA_DESC,
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "directory": {
-                            "type": "string",
-                            "description": "Directory to search (default: cwd)",
-                        },
-                        "keyword": {
-                            "type": "string",
-                            "description": "Case-insensitive filename filter (optional)",
-                        },
-                        "max_results": {
-                            "type": "integer",
-                            "default": 20,
-                        },
-                    },
-                    "required": [],
-                },
-            ),
-            Tool(
-                name="find_and_look",
-                description=_FIND_AND_LOOK_DESC,
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "directory": {
-                            "type": "string",
-                            "description": "Directory to search",
-                        },
-                        "keyword": {
-                            "type": "string",
-                            "description": "Keyword to match in filenames",
-                        },
-                        "prompt": {
-                            "type": "string",
-                            "description": "Instruction for the vision model (optional)",
-                        },
-                        "prompt_name": {
-                            "type": "string",
-                            "description": "Named prompt template from prompts/ (optional)",
-                        },
-                        "frame_count": {
-                            "type": "integer",
-                            "default": 9,
-                        },
-                    },
-                    "required": ["directory", "keyword"],
-                },
-            ),
-        ]
+        return _tool_definitions()
 
     @server.call_tool()
     async def call_tool(name, arguments):
+        arguments = arguments or {}
         if name == "look":
-            text = _look(
+            text = await asyncio.to_thread(
+                _look,
                 arguments["media_path"],
                 prompt=arguments.get("prompt"),
                 prompt_name=arguments.get("prompt_name"),
-                frame_count=arguments.get("frame_count"))
+                frame_count=arguments.get("frame_count"),
+            )
             return [TextContent(type="text", text=text)]
 
         if name == "list_media":
             directory = arguments.get("directory") or os.getcwd()
-            keyword = arguments.get("keyword")
-            max_results = arguments.get("max_results", 20)
-            files = find_media_files(directory, keyword, max_results)
+            files = await asyncio.to_thread(
+                find_media_files,
+                directory,
+                arguments.get("keyword"),
+                arguments.get("max_results", 20),
+            )
             if not files:
-                return [TextContent(type="text",
-                    text="No media files found in: " + directory)]
-            listing = "\n".join(files)
-            return [TextContent(type="text",
-                text="Found {} file(s):\n{}".format(len(files), listing))]
+                text = "No media files found in: " + directory
+            else:
+                text = "Found {} file(s):\n{}".format(len(files), "\n".join(files))
+            return [TextContent(type="text", text=text)]
 
         if name == "find_and_look":
             directory = arguments["directory"]
             keyword = arguments["keyword"]
-            files = find_media_files(directory, keyword, max_results=1)
+            files = await asyncio.to_thread(
+                find_media_files, directory, keyword, 1)
             if not files:
-                return [TextContent(type="text",
-                    text="No media file matching '{}' found in: {}".format(
-                        keyword, directory))]
-            text = _look(
-                files[0],
-                prompt=arguments.get("prompt"),
-                prompt_name=arguments.get("prompt_name"),
-                frame_count=arguments.get("frame_count"))
-            return [TextContent(type="text",
-                text="File: {}\n\n{}".format(files[0], text))]
+                text = "No media file matching '{}' found in: {}".format(
+                    keyword, directory)
+            else:
+                found = files[0]
+                result = await asyncio.to_thread(
+                    _look,
+                    found,
+                    prompt=arguments.get("prompt"),
+                    prompt_name=arguments.get("prompt_name"),
+                    frame_count=arguments.get("frame_count"),
+                )
+                text = "File: {}\n\n{}".format(found, result)
+            return [TextContent(type="text", text=text)]
 
         return [TextContent(type="text", text="Unknown tool: " + name)]
 
@@ -295,6 +276,7 @@ def main():
         async with stdio_server() as (read_stream, write_stream):
             await server.run(read_stream, write_stream,
                              server.create_initialization_options())
+
     asyncio.run(_run())
 
 

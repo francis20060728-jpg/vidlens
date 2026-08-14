@@ -12,3 +12,10 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local agent/test artifacts
+.idea/
+.tmp/
+.codex-*.patch
+.apply-patch.js
+codex-apply-patch.exe

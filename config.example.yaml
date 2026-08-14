@@ -25,9 +25,14 @@ model_name: ""      # e.g. "gpt-4o" / "qwen-vl-max" / "gemini-2.0-flash"
 # No config needed -- detected automatically.
 
 # --- Generation ---
-response_tokens: 4000      # max tokens for analysis text
+response_tokens: 1200      # max tokens for analysis text
+verification_tokens: 350   # shorter budget for PASS/FAIL verification prompts
 sampling_temp: 0.1         # 0.1 = factual, 0.7 = creative
-http_timeout: 120          # seconds (larger for high-res images)
+http_timeout: 45           # seconds per provider request
+total_timeout: 60          # seconds across all provider attempts
+reasoning_effort: ""       # optional: low/medium/high when provider supports it
+max_image_side: 1600       # downscale large images before upload (0 disables)
+image_jpeg_quality: 90     # JPEG quality for prepared images
 
 # --- Reasoning models (mimo-v2.5, o1, o3, deepseek-r1, qwq, etc.) ---
 # These models output "reasoning_content" before the actual answer,

@@ -7,5 +7,5 @@ This package provides the MCP server and reusable components.
 from .media import load_media, MediaKind
 from .bridge import Bridge
 from .media import find_media_files
-__version__ = "1.2.0"
+__version__ = "2.1.0"
 __all__ = ["load_media", "MediaKind", "Bridge", "find_media_files", "__version__"]

@@ -1,7 +1,11 @@
-Analyze this screenshot of a web page. Check:
-1. Does the page render correctly, or is it broken/error/blank?
-2. What is the main content visible on the page?
-3. Are there any visual errors, missing images, broken layouts, or 404s?
-4. Does the page look like what you'd expect from this URL?
-Be specific about what you see -- text content, images, layout, colors, errors.
-If the page shows an error message, quote it exactly.
+You are verifying a rendered frontend page or UI screenshot.
+
+Return at most 120 words in exactly this format:
+VERDICT: PASS, FAIL, or UNCLEAR
+EVIDENCE: 1-2 sentences of visible evidence
+BLOCKERS: ranked, concrete visual failures only; write "none" if none
+NEXT FIX: the single highest-impact change; write "none" if passing
+
+Judge only what is visibly present. Check blank/broken rendering, overlapping or
+clipped controls, unreadable text, broken media, obvious misalignment, and
+errors. Do not infer hidden code quality or invent layout requirements.

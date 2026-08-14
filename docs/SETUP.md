@@ -64,9 +64,14 @@ Any OpenAI-compatible vision API works:
 | `api_url` | "" | Vision API base URL |
 | `api_key` | "" | API key |
 | `model_name` | "" | Model name |
-| `response_tokens` | 4000 | Max response tokens |
+| `response_tokens` | 1200 | Max response tokens |
+| `verification_tokens` | 350 | Shorter budget for structured PASS/FAIL prompts |
 | `sampling_temp` | 0.1 | Temperature (0.1 = factual, 0.7 = creative) |
-| `http_timeout` | 120 | Timeout in seconds |
+| `http_timeout` | 45 | Per-provider request timeout in seconds |
+| `total_timeout` | 60 | Maximum seconds across provider attempts |
+| `reasoning_effort` | empty | Optional low/medium/high provider control |
+| `max_image_side` | 1600 | Maximum uploaded image side; 0 disables |
+| `image_jpeg_quality` | 90 | JPEG quality for prepared images |
 | `is_reasoning_model` | false | Set true for thinking models not in auto-detect |
 
 For fallback providers and advanced options, see [ADVANCED.md](ADVANCED.md).

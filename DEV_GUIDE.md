@@ -15,7 +15,7 @@ visual content.
 - **GitHub**: https://github.com/francis20060728-jpg/vidlens
 - **License**: MIT
 - **Author email**: francis20060728@gmail.com
-- **Current version**: v2.0.0
+- **Current version**: v2.1.0
 
 Core philosophy: **zero pip dependencies for images**. Only Python 3 stdlib.
 Videos use ffmpeg (system binary); opencv is an optional fallback.
@@ -82,7 +82,13 @@ Network access requires `require_escalated` in the sandbox.
 - Result printed to stdout BEFORE file write
 - Eliminates GBK encoding problem and multi-minute delays
 
-### v2.0.0 - MCP-First Architecture (current)
+### v2.1.0 - Text-Safe Latency Architecture (current)
+- MCP and CLI share one runtime: URL download, media preparation, provider failover, OCR fallback, and timeouts
+- Text-only guard: media paths never become native-vision model input through a generic image viewer
+- Structured PASS/FAIL verification prompts with caller intent
+- Image downscaling plus per-provider and total deadlines
+
+### v2.0.0 - MCP-First Architecture
 - MCP server (`vidlens/server.py`) with 3 tools: `look`, `list_media`, `find_and_look`
 - CLI/skill is fallback for agents without MCP
 - Native vision check: skip VidLens if model already sees images
@@ -108,15 +114,16 @@ Layer 2 (read on trigger): SKILL.md
     3-line body (~542 bytes total)
 
 Layer 3 (read on demand): docs/ files
-    SETUP.md, ADVANCED.md, TROUBLESHOOTING.md
+    SETUP.md, ADVANCED.md, TESTING.md, TROUBLESHOOTING.md
 ```
 
 ### MCP-First Priority Chain
 
 ```
-1. NATIVE VISION  -> skip VidLens if model can see images
-2. MCP TOOL       -> call look/list_media/find_and_look directly (fastest)
-3. CLI FALLBACK   -> python scripts/vidlens.py <path> --task "question"
+1. CAPABILITY     -> explicitly multimodal? use native vision
+2. TEXT/UNKNOWN   -> route media paths/URLs through VidLens (text-only result)
+3. MCP TOOL       -> call look/list_media/find_and_look directly (fastest)
+4. CLI FALLBACK   -> python scripts/vidlens.py <path> --task "question"
 ```
 
 ### Data Flow
@@ -128,8 +135,8 @@ Image/Video file
 [media.py] load_media() / raw bytes read
     |
     v
-[bridge.py] Bridge.ask() -- base64 -> HTTP POST to vision API
-    |        (with provider failover chain)
+[scripts/vidlens.py] shared runtime -> prepare/downscale -> base64
+    |                    (provider failover + total deadline)
     v
 Vision API response (plain text) -> returned to agent
 ```
@@ -225,9 +232,14 @@ Vision API response (plain text) -> returned to agent
 api_url: "https://api.openai.com/v1"    # Required
 api_key: "sk-xxxx..."                   # Required
 model_name: "gpt-4o"                    # Required
-response_tokens: 4000
+response_tokens: 1200
+verification_tokens: 350
 sampling_temp: 0.1
-http_timeout: 120
+http_timeout: 45
+total_timeout: 60
+reasoning_effort: low
+max_image_side: 1600
+image_jpeg_quality: 90
 is_reasoning_model: false
 fallback_1_url: "..."                   # Optional, up to 9
 ```
@@ -280,7 +292,9 @@ Env vars checked BEFORE config.yaml. This is how MCP server registration works.
 - **No auto-download URLs**: Security -- screenshot first so user sees what is analyzed
 - **stdout not file**: Eliminates encoding issues, faster, works without write perms
 - **Agent-agnostic install**: Auto-detects config files, not hardcoded agent names
-- **Native vision check first**: Skip VidLens if model already sees images
+- **Capability-first vision**: Explicitly multimodal models use native vision; text-only/unknown providers use VidLens and receive text only
+- **Text-model safety**: Media paths route to the external vision API; the main conversation receives text only
+- **Bounded latency**: Downscale large images, cap each provider call, and stop retries at a total deadline
 
 ---
 
@@ -288,9 +302,8 @@ Env vars checked BEFORE config.yaml. This is how MCP server registration works.
 
 ### High Priority
 1. PyPI package: `pip install vidlens`
-2. Async MCP server for better concurrency
-3. Batch analysis: `look_multiple()` for several images
-4. Streaming responses for faster first-token
+2. Batch analysis: `look_multiple()` for several images
+3. Streaming responses for faster first-token
 
 ### Medium Priority
 5. More local OCR backends (macOS Vision, EasyOCR, PaddleOCR)
@@ -306,7 +319,7 @@ Env vars checked BEFORE config.yaml. This is how MCP server registration works.
 ### Known Technical Debt
 - `scripts/vidlens.py` (43KB) is a monolith -- consider splitting
 - `examples/` and `prompts/` overlap -- consolidate
-- No automated tests -- need unit tests for bridge.py, media.py
+- Automated coverage is focused on the shared runtime; add integration coverage for more provider response shapes
 - `_parse_flat_yaml` does not support nested YAML
 
 ---
@@ -329,6 +342,9 @@ python scripts/vidlens.py --install-agents
 # Start MCP server
 python vidlens/server.py
 
+# Run focused tests
+python -m unittest discover -s tests -v
+
 # Run from package
 python -m vidlens image.png "question"
 ```
@@ -347,17 +363,22 @@ cd F:\vscode\开源\vidlens
 Use Python (never inline Chinese paths in PowerShell):
 
 ```python
-import os, shutil, pathlib
+import pathlib, shutil
 src = pathlib.Path(r"F:\vscode\开源\vidlens")
 dst = pathlib.Path(r"C:\Users\franc\.codex\skills\vidlens")
-skip = {"config.yaml", ".git", "__pycache__"}
-for root, dirs, files in os.walk(src):
-    dirs[:] = [d for d in dirs if d not in {".git", "__pycache__"}]
-    for f in files:
-        if f in skip: continue
-        sfp = pathlib.Path(root) / f
-        rel = sfp.relative_to(src)
-        dfp = dst / rel
-        dfp.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(sfp, dfp)
+files = [
+    "SKILL.md", "config.example.yaml",
+    "prompts/verify_page.txt", "prompts/verify_output.txt",
+    "scripts/vidlens.py",
+    "vidlens/media.py", "vidlens/server.py",
+    "tests/test_runtime.py", "tests/mcp_smoke.py",
+]
+for rel in files:
+    source = src / rel
+    target = dst / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
 ```
+
+This manifest preserves unrelated installed files and never copies the local
+`config.yaml`.

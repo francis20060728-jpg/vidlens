@@ -10,8 +10,8 @@ VidLens routes visual files through an external vision model and returns
 plain text. Any agent -- Codex, Claude Code, Cursor, Cline -- can inspect,
 verify, and respond to visual content without native image support.
 
-> **If your model already supports vision natively, do NOT use VidLens.**
-> It is only for text-only models that cannot see images.
+> **If the current model/provider is explicitly multimodal, use native vision.**
+> For text-only or unknown capability, use VidLens and keep image bytes outside the main conversation.
 
 ## How It Works
 
@@ -95,8 +95,10 @@ python scripts/vidlens.py --remove-agents    # remove
 python scripts/vidlens.py --status           # check
 ```
 
-The rule checks native vision first: if the model can see images, VidLens is
-skipped. MCP tools are preferred over CLI.
+The rule first checks actual model/provider capability. Explicitly multimodal
+models use native vision and may load a media path into native input;
+text-only or unknown-capability providers route through VidLens, which returns
+text only. A rejected native-image request is not retried.
 
 ## Features
 
@@ -108,6 +110,9 @@ skipped. MCP tools are preferred over CLI.
 - **Video support** via ffmpeg (system binary) with opencv contact-sheet fallback
 - **Custom prompt templates** (drop .txt in prompts/)
 - **Multi-provider**: works with any OpenAI-compatible vision API
+- **Text-safe bridge**: image bytes stay outside the main text-model conversation
+- **Fast verification prompts**: concise PASS/FAIL evidence plus one next fix
+- **Latency controls**: image downsampling, bounded retries, per-request and total timeouts
 
 ## Config
 
@@ -116,9 +121,14 @@ skipped. MCP tools are preferred over CLI.
 | `api_url` | `""` | Vision API base URL |
 | `api_key` | `""` | API key |
 | `model_name` | `""` | Model name |
-| `response_tokens` | `4000` | Max response tokens |
+| `response_tokens` | `1200` | Max response tokens |
+| `verification_tokens` | `350` | Shorter budget for structured PASS/FAIL prompts |
 | `sampling_temp` | `0.1` | Temperature (0.1 factual, 0.7 creative) |
-| `http_timeout` | `120` | Timeout in seconds |
+| `http_timeout` | `45` | Per-provider timeout in seconds |
+| `total_timeout` | `60` | Maximum time across all provider attempts |
+| `reasoning_effort` | `""` | Optional low/medium/high provider control |
+| `max_image_side` | `1600` | Maximum uploaded image side (0 disables) |
+| `image_jpeg_quality` | `90` | JPEG quality for prepared images |
 | `is_reasoning_model` | `false` | Set true for thinking models |
 | `fallback_N_url` | `""` | Fallback provider N URL (N=1-9) |
 
@@ -138,6 +148,7 @@ Full troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 - [Setup Guide](docs/SETUP.md)
 - [Advanced Features](docs/ADVANCED.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Testing and Boundaries](docs/TESTING.md)
 - [Changelog](CHANGELOG.md)
 
 ## Contact
