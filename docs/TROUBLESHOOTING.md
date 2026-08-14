@@ -15,6 +15,13 @@
 | Result is just thinking / no answer | The model spent all tokens on reasoning. Set `is_reasoning_model: true` to get more tokens upfront, or increase `response_tokens` |
 | Image too large error | Some APIs reject large images. VidLens auto-compresses, but very high-res images may need manual resizing |
 
+## Slow on first run (sandbox approval)
+
+If the first image analysis takes 1-2 minutes but subsequent runs are fast,
+this is normal. The agent's sandbox needs to approve the network request
+once. After approval, subsequent vidlens calls run at full speed (8-15s
+typical). This only affects the first run after install.
+
 ## Getting Help
 
 - Check [SETUP.md](SETUP.md) for first-time configuration
