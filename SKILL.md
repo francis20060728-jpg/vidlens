@@ -127,22 +127,22 @@ ensures the agent always gets *something* rather than failing.
 
 ## URL Support
 
-VidLens can download and analyze media from URLs directly:
-
-```bash
-python scripts/vidlens.py https://example.com/photo.jpg "What is this?"
-python scripts/vidlens.py https://example.com/video.mp4 "Describe the motion"
-```
-
-For **web page URLs** (not direct media links), use your browser tool to
-screenshot the page first, then pass the screenshot to VidLens with
-`--prompt-name verify_page`:
+For **web page URLs**, always use your browser tool to screenshot the page
+first, then pass the screenshot to VidLens. Do NOT download URLs automatically.
 
 ```bash
 python scripts/vidlens.py page-screenshot.png --prompt-name verify_page
 ```
 
 This checks whether the page renders correctly, looks broken, or has errors.
+
+VidLens can also download direct media URLs when the user explicitly asks:
+
+```bash
+python scripts/vidlens.py https://example.com/photo.jpg "What is this?"
+```
+
+Default behavior is screenshot-only. Do not auto-download unless the user asks.
 
 ## Finding Python
 

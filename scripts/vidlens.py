@@ -72,9 +72,9 @@ natively inspect.
 
 TRIGGER when ANY of these happen:
 1. User sends an image, screenshot, or video file.
-2. User sends a URL to a web page, image, or video -- download or screenshot it
-   first, then analyze with VidLens to check if the page renders correctly,
-   looks broken, or has the expected content.
+2. User sends a URL -- use your browser tool to screenshot the page, then pass
+   the screenshot to VidLens. Do NOT auto-download URLs unless the user
+   explicitly asks you to.
 3. User discusses UI layout, design, charts, graphs, plots, or anything visual.
 4. You generated visual output (build screenshots, rendered pages, plots) and
    need to self-verify it looks right.
@@ -87,10 +87,11 @@ TRIGGER when ANY of these happen:
 ## Rules
 - CHECK FIRST: can you see it natively? If yes, skip VidLens.
 - If you cannot see it: do NOT silently ignore the image/URL. Run VidLens.
+- For URLs: ALWAYS screenshot via browser tool first, then analyze the
+  screenshot. Do NOT download URLs automatically. Only download if the user
+  explicitly requests it.
 - After it prints output_path=, READ that file for the description.
 - Be transparent: tell the user you used an external vision model.
-- For web page URLs: use your browser tool to screenshot, then pass the
-  screenshot to VidLens. Or pass the URL directly if it links to an image/video.
 <!-- vidlens:end -->"""
 
 AGENTS_START = "<!-- vidlens:start -->"
