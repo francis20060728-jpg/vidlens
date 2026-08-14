@@ -5,6 +5,23 @@ Versions follow [semantic versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-08-14
+
+### Fixed
+- **Result now printed to stdout** after the `output_path=` line. Agents
+  read the analysis text directly from command output -- no second
+  file-reading step needed.
+- This eliminates the Windows GBK encoding problem entirely: stdout is
+  forced to UTF-8 (line 45-46 of vidlens.py), so Chinese and other
+  non-ASCII text displays correctly without manual encoding workarounds.
+- Fixes the "5-minute image analysis" issue: the delay was caused by
+  agents spending minutes debugging garbled file output, not the API
+  call itself. Now the result arrives in a single command (8-10s typical).
+
+### Changed
+- Updated AGENTS.md auto-use rule: "Read it directly from the command output"
+- Updated SKILL.md "Read the result" section
+
 ## [1.5.0] - 2026-08-14
 
 ### Changed
@@ -73,7 +90,8 @@ Versions follow [semantic versioning](https://semver.org).
 - `--init`, `--status`, `--install-agents`, `--remove-agents` commands
 - Launcher scripts (`vidlens.cmd` / `vidlens.sh`) with Python auto-detection
 
-[Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/francis20060728-jpg/vidlens/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.5.1
 [1.5.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.5.0
 [1.4.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.4.0
 [1.3.0]: https://github.com/francis20060728-jpg/vidlens/releases/tag/v1.3.0

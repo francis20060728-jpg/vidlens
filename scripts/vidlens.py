@@ -90,7 +90,8 @@ TRIGGER when ANY of these happen:
 - For URLs: ALWAYS screenshot via browser tool first, then analyze the
   screenshot. Do NOT download URLs automatically. Only download if the user
   explicitly requests it.
-- After it prints output_path=, READ that file for the description.
+- The analysis text is printed to stdout after the output_path= line.
+  Read it directly from the command output.
 - Be transparent: tell the user you used an external vision model.
 <!-- vidlens:end -->"""
 
@@ -1042,6 +1043,10 @@ def main():
     )
     out.write_text(content, encoding="utf-8")
     print("output_path={}".format(out))
+    # Print result to stdout (forced UTF-8 on Windows) so agents read
+    # it directly -- no second file-reading step that may hit GBK issues.
+    print()
+    print(report.strip())
     return 0
 
 
