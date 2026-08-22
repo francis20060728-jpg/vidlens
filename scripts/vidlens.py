@@ -619,7 +619,12 @@ def _call_one_provider(api_url, api_key, model, media_path, kind, prompt, cfg,
     reasoning_effort = str(cfg.get("reasoning_effort", "")).lower()
     if reasoning_effort:
         payload["reasoning_effort"] = reasoning_effort
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        # opencode.ai (Cloudflare) blocks urllib's default User-Agent (HTTP 403
+        # error code 1010); a plain non-browser UA is required to get through.
+        "User-Agent": "vidlens/1.0",
+    }
     if api_key:
         headers["Authorization"] = "Bearer " + api_key
     endpoint = api_url.rstrip("/") + "/chat/completions"
